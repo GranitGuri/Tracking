@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\lang\Documents\Herz\VentTrackS\main.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\lang\Documents\Herz\VentTrackS\VMainWindow.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\lang\Documents\Herz\VentTrackS\SliceInteractorStyle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\lang\Documents\Herz\VentTrackS\VentTrackS.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\lang\Documents\Herz\VentTrackS\buildvs\VentTrackS_automoc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\lang\Documents\Herz\VentTrackS\buildvs\ui_VMainWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\lang\Documents\Herz\VentTrackS\SliceInteractorStyle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\lang\Documents\Herz\VentTrackS\VentTrackS.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\lang\Documents\Herz\VentTrackS\VMainWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\lang\Documents\Herz\VentTrackS\CMakeLists.txt" />
+    <CustomBuild Include="C:\Users\lang\Documents\Herz\VentTrackS\VMainWindow.ui" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{FED7050B-5F74-4699-9866-62AECB70A44E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{0A8070F9-6F51-452E-A648-AE8AC80DACE3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

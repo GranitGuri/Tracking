@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\gg\Documents\Visual Studio 2017\Bachelor\SliceInteractorStyle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\gg\Documents\Visual Studio 2017\Bachelor\VMainWindow.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\gg\Documents\Visual Studio 2017\Bachelor\VentTrackS.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\gg\Documents\Visual Studio 2017\Bachelor\main.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\gg\Documents\Visual Studio 2017\Bachelor\bin\VentTrackS_autogen\mocs_compilation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dynamics.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\gg\Documents\Visual Studio 2017\Bachelor\bin\ui_VMainWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\gg\Documents\Visual Studio 2017\Bachelor\SliceInteractorStyle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\gg\Documents\Visual Studio 2017\Bachelor\VMainWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\gg\Documents\Visual Studio 2017\Bachelor\VentTrackS.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Dynamics.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\gg\Documents\Visual Studio 2017\Bachelor\VMainWindow.ui" />
+    <CustomBuild Include="C:\Users\gg\Documents\Visual Studio 2017\Bachelor\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{F9BF8CDF-DF07-3ED8-B47A-004E88CD6B06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{D1393B8A-DC7F-344B-99F6-C64B5E587A03}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
