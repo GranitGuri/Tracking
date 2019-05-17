@@ -344,6 +344,8 @@ void VMainWindow::changeT(int t)
     volumeMapper2->SetInputConnection(image2[tPos]->GetOutputPort());
     volumeMapper2->Update();
     qvtkWidgetVolume2->update();
+
+	emit tChanged(tPos);
 }
 
 void VMainWindow::slotExit()
