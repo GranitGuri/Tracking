@@ -43,9 +43,10 @@ public:
     void computeGradientMagnitude();
 	void showFeature(int x, int y, int z, int f);
 	void fillSeed(int x, int y, int z, int f);
+	void FilterCreation(int size);
 
 	int sumOfSqares(int x, int y, int z, int f, int length);
-	int sumOfSqareDifference(int x, int y, int z, int f, int length);
+	double sumOfSqareDifference(int x, int y, int z, int f, int length);
     int gradientMagnitude(int f, int x, int y, int z);
     int specklitude(int f, int x, int y, int z);
     int idx(int x, int y, int z);

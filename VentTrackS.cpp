@@ -17,6 +17,9 @@ using namespace std;
 VolumeData vd;
 extern VMainWindow* MWP;
 
+int FEATURELENGTH = 5;
+int SEARCHDISTANCE = 5;
+
 void VolumeData::readPhilipsDicomFile()
 {
     /* Read data header */
@@ -115,15 +118,17 @@ void VolumeData::readPhilipsDicomFile()
     computeGradientMagnitude();
 	fillSeed(100, 100, 100, 0);
 	showFeature(100, 100, 100 , 0);
-	int pos = sumOfSqares(100, 100, 100, 0, 10);
-	/*for (unsigned int i = 1; i < numVolumes; i++) {
+	FilterCreation(FEATURELENGTH);
+	int pos = sumOfSqares(100, 100, 100, 0, FEATURELENGTH);
+	for (unsigned int i = 1; i < numVolumes; i++) {
 		fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
 		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
-		pos = sumOfSqares(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i, 10);
-	}*/
+		pos = sumOfSqares(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i, FEATURELENGTH);
+	}
 	cout << endl;
     inFile.close();
 }
+
 
 /*Make 3D Vector
 Input x,y,z Dimensions of a 3D Matrix, value Type of Input(Int, Char, ...)
@@ -135,20 +140,20 @@ std::vector<vector<vector<T>>> make_3d_vector(int z, int y, int x, T value = T{}
 	return vector<vector<vector<T>>>(z, vector<vector<T>>(y, vector<T>(x, value)));
 }
 
-vector<vector<vector<double>>> feature = make_3d_vector(10, 10, 10, 0.0);
-vector<vector<vector<double>>> GKernel = make_3d_vector(10, 10, 10, 0.0);
+vector<vector<vector<double>>> feature = make_3d_vector(FEATURELENGTH, FEATURELENGTH, FEATURELENGTH, 0.0);
+vector<vector<vector<double>>> GKernel = make_3d_vector(FEATURELENGTH, FEATURELENGTH, FEATURELENGTH, 0.0);
 
 void VolumeData::fillSeed(int x, int y, int z, int f) {
-		for (unsigned int i = z; i < z+10; i++)
-			for (int j = x; j < x+10; j++)
-				for (int k = y; k < y+10; k++)
+		for (unsigned int i = z; i < z + FEATURELENGTH; i++)
+			for (int j = x; j < x + FEATURELENGTH; j++)
+				for (int k = y; k < y + FEATURELENGTH; k++)
 					feature[j-x][k-y][i-z] = frame[f][idx(j, k, i)];
 }
 
 void VolumeData::showFeature(int x, int y, int z, int f) {
-	for (unsigned int i = z; i < z + 10; i++)
-		for (int j = x; j < x + 10; j++)
-			for (int k = y; k < y + 10; k++)
+	for (unsigned int i = z; i < z + FEATURELENGTH; i++)
+		for (int j = x; j < x + FEATURELENGTH; j++)
+			for (int k = y; k < y + FEATURELENGTH; k++)
 					frame[f][idx(j, k, i)] = 255;
 }
 
@@ -157,7 +162,7 @@ Creates a Gaussian Kernel of odd size
 Input: int size(Odd)
 Output: Overwrites the Global 3D Vector GKernel
 **/
-void FilterCreation(int size)
+void VolumeData::FilterCreation(int size)
 {
 	// intialising standard deviation to 1.0 
 	double sigma = 1.0;
@@ -195,17 +200,17 @@ Sum of the cubes Values
 Input: x, y, z, frame, length
 Output: Integer
 */
-int VolumeData::sumOfSqareDifference(int x, int y, int z, int f, int length)
+double VolumeData::sumOfSqareDifference(int x, int y, int z, int f, int length)
 {
-	int sum = 0;
-	int diff = 0;
+	double sum = 0;
+	double diff = 0;
 	for (int i = z; i < z + length; i++)
 	{
 		for (int j = y; j < y + length; j++)
 		{
 			for (int k = x; k < x + length; k++)
 			{
-				diff = abs(feature[k - x][j - y][i - z] - frame[f][idx(x, y, z)]);
+				diff = GKernel[k - x][j - y][i - z] * (abs(feature[k - x][j - y][i - z] - frame[f][idx(x, y, z)]));
 				sum += diff * diff;
 			}
 		}
@@ -221,12 +226,12 @@ Output: Position of feature
 int VolumeData::sumOfSqares(int x, int y, int z, int f, int length)
 {
 	int pos = idx(x, y, z);
-	int min = 10000000;
-	for (int i = z - searchDistance; i <= z + searchDistance; i++)
+	double min = 1000;
+	for (int i = z - SEARCHDISTANCE; i <= z + SEARCHDISTANCE; i++)
 	{
-		for (int j = y - searchDistance; j <= y + searchDistance; j++)
+		for (int j = y - SEARCHDISTANCE; j <= y + SEARCHDISTANCE; j++)
 		{
-			for (int k = x - searchDistance; k <= x + searchDistance; k++)
+			for (int k = x - SEARCHDISTANCE; k <= x + SEARCHDISTANCE; k++)
 			{
 				int s = sumOfSqareDifference(i, j, k, f, length);
 				if (min > s)
