@@ -17,8 +17,9 @@ using namespace std;
 VolumeData vd;
 extern VMainWindow* MWP;
 
-int FEATURELENGTH = 5;
-int SEARCHDISTANCE = 5;
+int FEATURELENGTH = 3;
+int SEARCHDISTANCE = 1;
+int FRAMEDISTANCE = 3;
 
 void VolumeData::readPhilipsDicomFile()
 {
@@ -116,11 +117,10 @@ void VolumeData::readPhilipsDicomFile()
         inFile.read((char*) fro[i], volumeSize);
     }
     computeGradientMagnitude();
-	fillSeed(100, 100, 100, 0);
-	showFeature(100, 100, 100 , 0);
 	FilterCreation(FEATURELENGTH);
-	int pos = sumOfSqares(100, 100, 100, 0, FEATURELENGTH);
-	for (unsigned int i = 1; i < numVolumes; i++) {
+	Print3D();
+	int pos = idx(100, 100, 100);
+	for (unsigned int i = 0; i < FRAMEDISTANCE; i++) {
 		fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
 		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
 		pos = sumOfSqares(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i, FEATURELENGTH);
@@ -142,19 +142,20 @@ std::vector<vector<vector<T>>> make_3d_vector(int z, int y, int x, T value = T{}
 
 vector<vector<vector<double>>> feature = make_3d_vector(FEATURELENGTH, FEATURELENGTH, FEATURELENGTH, 0.0);
 vector<vector<vector<double>>> GKernel = make_3d_vector(FEATURELENGTH, FEATURELENGTH, FEATURELENGTH, 0.0);
+vector<vector<vector<double>>> Differences = make_3d_vector(SEARCHDISTANCE*2 + 1, SEARCHDISTANCE*2 + 1, SEARCHDISTANCE*2 + 1, 0.0);
 
 void VolumeData::fillSeed(int x, int y, int z, int f) {
-		for (unsigned int i = z; i < z + FEATURELENGTH; i++)
-			for (int j = x; j < x + FEATURELENGTH; j++)
-				for (int k = y; k < y + FEATURELENGTH; k++)
-					feature[j-x][k-y][i-z] = frame[f][idx(j, k, i)];
+		for (int i = z; i < z + FEATURELENGTH; i++)
+			for (int j = y; j < y + FEATURELENGTH; j++)
+				for (int k = x; k < x + FEATURELENGTH; k++)
+					feature[k-x][j-y][i-z] = frame[f][idx(k, j, i)];
 }
 
 void VolumeData::showFeature(int x, int y, int z, int f) {
-	for (unsigned int i = z; i < z + FEATURELENGTH; i++)
-		for (int j = x; j < x + FEATURELENGTH; j++)
-			for (int k = y; k < y + FEATURELENGTH; k++)
-					frame[f][idx(j, k, i)] = 255;
+	for (int i = z; i < z + FEATURELENGTH; i++)
+		for (int j = y; j < y + FEATURELENGTH; j++)
+			for (int k = x; k < x + FEATURELENGTH; k++)
+					frame[f][idx(k, j, i)] = 255;
 }
 
 /**
@@ -190,6 +191,22 @@ void VolumeData::FilterCreation(int size)
 				GKernel[i][j][k] /= sum;
 }
 
+void VolumeData::Print3D() {
+
+	for (int y = 0; y < GKernel[0].size(); y++)
+	{
+		for (int z = 0; z < GKernel[0][0].size(); z++)
+		{
+			for (int x = 0; x < GKernel.size(); x++)
+			{
+				cout << GKernel[x][y][z];
+			}
+			cout << "    ";
+		}
+		cout << endl;
+	}
+
+}
 /***************************************************************************************************************************************************/
 /********************************SUM OF SQARE DIFFERENCE FUNCTIONS**********************************************************************************/
 /***************************************************************************************************************************************************/
@@ -210,7 +227,7 @@ double VolumeData::sumOfSqareDifference(int x, int y, int z, int f, int length)
 		{
 			for (int k = x; k < x + length; k++)
 			{
-				diff = GKernel[k - x][j - y][i - z] * (abs(feature[k - x][j - y][i - z] - frame[f][idx(x, y, z)]));
+				diff = (abs(feature[k - x][j - y][i - z] - frame[f][idx(k, j, i)]));
 				sum += diff * diff;
 			}
 		}
@@ -226,14 +243,15 @@ Output: Position of feature
 int VolumeData::sumOfSqares(int x, int y, int z, int f, int length)
 {
 	int pos = idx(x, y, z);
-	double min = 1000;
+	double min = 1000000;
 	for (int i = z - SEARCHDISTANCE; i <= z + SEARCHDISTANCE; i++)
 	{
 		for (int j = y - SEARCHDISTANCE; j <= y + SEARCHDISTANCE; j++)
 		{
 			for (int k = x - SEARCHDISTANCE; k <= x + SEARCHDISTANCE; k++)
 			{
-				int s = sumOfSqareDifference(i, j, k, f, length);
+				double s = sumOfSqareDifference(k, j, i, f, length);
+				Differences[k - x + SEARCHDISTANCE][j - y + SEARCHDISTANCE][i - z + SEARCHDISTANCE] = sumOfSqareDifference(k, j, i, f, length);
 				if (min > s)
 				{
 					min = s;
@@ -243,7 +261,7 @@ int VolumeData::sumOfSqares(int x, int y, int z, int f, int length)
 		}
 	}
 
-	cout << "Count" << min << endl;
+	cout << "Count " << min << endl;
 	cout << idx_get_x(pos) << endl;
 	cout << idx_get_y(pos) << endl;
 	cout << idx_get_z(pos) << endl;

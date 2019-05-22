@@ -44,6 +44,7 @@ public:
 	void showFeature(int x, int y, int z, int f);
 	void fillSeed(int x, int y, int z, int f);
 	void FilterCreation(int size);
+	void Print3D();
 
 	int sumOfSqares(int x, int y, int z, int f, int length);
 	double sumOfSqareDifference(int x, int y, int z, int f, int length);
