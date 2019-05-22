@@ -27,6 +27,7 @@ public:
     void SetMainWindow(VMainWindow* mainWindow);
     void SetSliceType(SliceType sliceType);
     virtual void OnLeftButtonDown();
+	virtual void OnKeyPress();
 private:
     VolumeData v;
     SliceType sliceType;
@@ -35,7 +36,6 @@ private:
     int calcY(double coord);
     int calcZ(double coord);
 };
-
 
 
 

@@ -116,11 +116,11 @@ void VolumeData::readPhilipsDicomFile()
 	fillSeed(100, 100, 100, 0);
 	showFeature(100, 100, 100 , 0);
 	int pos = sumOfSqares(100, 100, 100, 0, 10);
-	for (unsigned int i = 1; i < numVolumes; i++) {
+	/*for (unsigned int i = 1; i < numVolumes; i++) {
 		fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
 		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
 		pos = sumOfSqares(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i, 10);
-	}
+	}*/
 	cout << endl;
     inFile.close();
 }

@@ -61,6 +61,31 @@ void SliceInteractorStyle::OnLeftButtonDown()
     vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
 }
 
+void SliceInteractorStyle::OnKeyPress()
+{
+	// Get the keypress
+	vtkRenderWindowInteractor *rwi = this->Interactor;
+	std::string key = rwi->GetKeySym();
+
+	// Output the key that was pressed
+	std::cout << "Pressed " << key << std::endl;
+
+	// Handle an arrow key
+	if (key == "Up")
+	{
+		std::cout << "The up arrow was pressed." << std::endl;
+	}
+
+	// Handle a "normal" key
+	if (key == "a")
+	{
+		std::cout << "The a key was pressed." << std::endl;
+	}
+
+	// Forward events
+	vtkInteractorStyleTrackballCamera::OnKeyPress();
+}
+
 int SliceInteractorStyle::calcX(double coord) {
     double xLeft = 98;
     double xRight = -100;

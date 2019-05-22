@@ -6,6 +6,7 @@
 #include "vtkFixedPointVolumeRayCastMapper.h"
 #include "vtkImageReslice.h"
 #include "vtkImageViewer2.h"
+#include "vtkInteractorStyleTrackballCamera.h"
 
 #include <QMainWindow>
 
@@ -45,6 +46,5 @@ signals:
     void zChanged(int z);
     void tChanged(int t);
 };
-
 
 #endif
