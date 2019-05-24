@@ -18,8 +18,8 @@ VolumeData vd;
 extern VMainWindow* MWP;
 
 int FEATURELENGTH = 3;
-int SEARCHDISTANCE = 0;
-int FRAMEDISTANCE = 3;
+int SEARCHDISTANCE = 10;
+int FRAMEDISTANCE = 1;
 
 void VolumeData::readPhilipsDicomFile()
 {
@@ -123,8 +123,11 @@ void VolumeData::readPhilipsDicomFile()
 	Print3D();
 	for (unsigned int i = 0; i < FRAMEDISTANCE; i++) {
 		fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
-		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
-		pos = sumOfSqares(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i, FEATURELENGTH);
+		pos = sumOfSqares(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i + 1, FEATURELENGTH);
+	}
+	for (unsigned int i = FRAMEDISTANCE; i > 0; i--) {
+		fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
+		pos = sumOfSqares(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i - 1, FEATURELENGTH);
 	}
 	cout << endl;
     inFile.close();
@@ -143,7 +146,6 @@ std::vector<vector<vector<T>>> make_3d_vector(int z, int y, int x, T value = T{}
 
 vector<vector<vector<double>>> feature = make_3d_vector(FEATURELENGTH, FEATURELENGTH, FEATURELENGTH, 0.0);
 vector<vector<vector<double>>> GKernel = make_3d_vector(FEATURELENGTH, FEATURELENGTH, FEATURELENGTH, 0.0);
-vector<vector<vector<double>>> Differences = make_3d_vector(SEARCHDISTANCE*2 + 1, SEARCHDISTANCE*2 + 1, SEARCHDISTANCE*2 + 1, 0.0);
 
 void VolumeData::fillSeed(int x, int y, int z, int f) {
 		for (int i = z; i < z + FEATURELENGTH; i++)
@@ -252,7 +254,9 @@ double VolumeData::sumOfSqareDifference(int x, int y, int z, int f, int length)
 		{
 			for (int k = x; k < x + length; k++)
 			{
-				diff = (feature[k - x][j - y][i - z] - +frame[f][idx(k, j, i)]);
+				//int a = +feature[k - x][j - y][i - z];
+				//int b = +frame[f][idx(k, j, i)];
+				diff = GKernel[k - x][j - y][i - z] * (+feature[k - x][j - y][i - z] - +frame[f][idx(k, j, i)]);
 				sum += diff * diff;
 			}
 		}
@@ -276,7 +280,6 @@ int VolumeData::sumOfSqares(int x, int y, int z, int f, int length)
 			for (int k = x - SEARCHDISTANCE; k <= x + SEARCHDISTANCE; k++)
 			{
 				double s = sumOfSqareDifference(k, j, i, f, length);
-				Differences[k - x + SEARCHDISTANCE][j - y + SEARCHDISTANCE][i - z + SEARCHDISTANCE] = sumOfSqareDifference(k, j, i, f, length);
 				if (min > s)
 				{
 					min = s;

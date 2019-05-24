@@ -30,6 +30,7 @@
 #include "VentTrackS.h"
 #include "VMainWindow.h"
 #include "SliceInteractorStyle.h"
+#include "Dynamics.h"
 
 extern VolumeData vd;
 

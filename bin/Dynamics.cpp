@@ -19,10 +19,10 @@ extern VMainWindow* MWP;
 
 void doSomething()
 {
-	MWP->changeX(104);
-	MWP->changeY(105);
-	MWP->changeZ(105);
-	MWP->changeT(20);
+	MWP->changeX(102);
+	MWP->changeY(102);
+	MWP->changeZ(102);
+	MWP->changeT(0);
 }
 
 
