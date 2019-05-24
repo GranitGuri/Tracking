@@ -255,7 +255,7 @@ VMainWindow::VMainWindow()
     zStyle->SetMainWindow(this);
     zStyle->SetSliceType(SliceType::Z);
     qvtkWidgetPlaneZ->GetRenderWindow()->GetInteractor()->SetInteractorStyle(zStyle);
-    //qvtkWidgetPlaneZ2->GetRenderWindow()->GetInteractor()->SetInteractorStyle(zStyle);
+	qvtkWidgetPlaneZ2->GetRenderWindow()->GetInteractor()->SetInteractorStyle(zStyle);
     
     
     // Set up sliders

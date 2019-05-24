@@ -18,7 +18,7 @@ VolumeData vd;
 extern VMainWindow* MWP;
 
 int FEATURELENGTH = 3;
-int SEARCHDISTANCE = 1;
+int SEARCHDISTANCE = 0;
 int FRAMEDISTANCE = 3;
 
 void VolumeData::readPhilipsDicomFile()
@@ -118,8 +118,9 @@ void VolumeData::readPhilipsDicomFile()
     }
     computeGradientMagnitude();
 	FilterCreation(FEATURELENGTH);
-	Print3D();
 	int pos = idx(100, 100, 100);
+	fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), 0);
+	Print3D();
 	for (unsigned int i = 0; i < FRAMEDISTANCE; i++) {
 		fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
 		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
@@ -205,6 +206,30 @@ void VolumeData::Print3D() {
 		}
 		cout << endl;
 	}
+	for (int y = 0; y < feature[0].size(); y++)
+	{
+		for (int z = 0; z < feature[0][0].size(); z++)
+		{
+			for (int x = 0; x < feature.size(); x++)
+			{
+				cout << feature[x][y][z];
+			}
+			cout << "    ";
+		}
+		cout << endl;
+	}
+	for (int y = 0; y < GKernel[0].size(); y++)
+	{
+		for (int z = 0; z < GKernel[0][0].size(); z++)
+		{
+			for (int x = 0; x < GKernel.size(); x++)
+			{
+				cout << +frame[0][idx(x+100, y+100, z+100)];
+			}
+			cout << "    ";
+		}
+		cout << endl;
+	}
 
 }
 /***************************************************************************************************************************************************/
@@ -227,7 +252,7 @@ double VolumeData::sumOfSqareDifference(int x, int y, int z, int f, int length)
 		{
 			for (int k = x; k < x + length; k++)
 			{
-				diff = (abs(feature[k - x][j - y][i - z] - frame[f][idx(k, j, i)]));
+				diff = (feature[k - x][j - y][i - z] - +frame[f][idx(k, j, i)]);
 				sum += diff * diff;
 			}
 		}
