@@ -18,7 +18,7 @@ VolumeData vd;
 extern VMainWindow* MWP;
 
 int FEATURELENGTH = 3;
-int SEARCHDISTANCE = 10;
+int SEARCHDISTANCE = 5;
 int FRAMEDISTANCE = 1;
 
 void VolumeData::readPhilipsDicomFile()
@@ -118,17 +118,11 @@ void VolumeData::readPhilipsDicomFile()
     }
     computeGradientMagnitude();
 	FilterCreation(FEATURELENGTH);
-	int pos = idx(100, 100, 100);
+	int pos = idx(93, 95, 108);
 	fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), 0);
 	Print3D();
-	for (unsigned int i = 0; i < FRAMEDISTANCE; i++) {
-		fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
-		pos = sumOfSqares(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i + 1, FEATURELENGTH);
-	}
-	for (unsigned int i = FRAMEDISTANCE; i > 0; i--) {
-		fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
-		pos = sumOfSqares(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i - 1, FEATURELENGTH);
-	}
+	SSDforward(pos);
+	SSDbackward(pos);
 	cout << endl;
     inFile.close();
 }
@@ -294,6 +288,22 @@ int VolumeData::sumOfSqares(int x, int y, int z, int f, int length)
 	cout << idx_get_y(pos) << endl;
 	cout << idx_get_z(pos) << endl;
 	return pos;
+}
+
+void VolumeData::SSDforward(int pos)
+{
+	for (unsigned int i = 0; i < FRAMEDISTANCE; i++) {
+		fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
+		pos = sumOfSqares(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i + 1, FEATURELENGTH);
+	}
+}
+
+void VolumeData::SSDbackward(int pos)
+{
+	for (unsigned int i = FRAMEDISTANCE; i > 0; i--) {
+		fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
+		pos = sumOfSqares(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i - 1, FEATURELENGTH);
+	}
 }
 
 

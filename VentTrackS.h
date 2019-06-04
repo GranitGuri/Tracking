@@ -26,7 +26,6 @@ public:
     std::ifstream inFile;
     
     int volumeSize;
-	int searchDistance = 10;
     
     unsigned char** frame;
     unsigned char** fro;
@@ -45,6 +44,8 @@ public:
 	void fillSeed(int x, int y, int z, int f);
 	void FilterCreation(int size);
 	void Print3D();
+	void SSDbackward(int pos);
+	void SSDforward(int pos);
 
 	int sumOfSqares(int x, int y, int z, int f, int length);
 	double sumOfSqareDifference(int x, int y, int z, int f, int length);

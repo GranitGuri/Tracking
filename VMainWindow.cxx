@@ -30,6 +30,7 @@
 #include "VentTrackS.h"
 #include "VMainWindow.h"
 #include "SliceInteractorStyle.h"
+#include "QKeyEvent"
 #include "Dynamics.h"
 
 extern VolumeData vd;
@@ -84,14 +85,14 @@ VMainWindow::VMainWindow()
    // vtkVolumeRayCastCompositeFunction *compositeFunction = vtkVolumeRayCastCompositeFunction::New();
     //vtkVolumeRayCastCompositeFunction *compositeFunction2 = vtkVolumeRayCastCompositeFunction::New();
 
-    volumeMapper = vtkFixedPointVolumeRayCastMapper::New();
+    volumeMapper = vtkGPUVolumeRayCastMapper::New();
    // volumeMapper->SetVolumeRayCastFunction(compositeFunction);
     volumeMapper->SetInputConnection(image[tPos]->GetOutputPort());
     vtkVolume *volume = vtkVolume::New();
     volume->SetMapper(volumeMapper);
     volume->SetProperty(volumeProperty);
 
-    volumeMapper2 = vtkFixedPointVolumeRayCastMapper::New();
+    volumeMapper2 = vtkGPUVolumeRayCastMapper::New();
    // volumeMapper2->SetVolumeRayCastFunction(compositeFunction2);
     volumeMapper2->SetInputConnection(image2[tPos]->GetOutputPort());
     vtkVolume *volume2 = vtkVolume::New();
@@ -258,6 +259,9 @@ VMainWindow::VMainWindow()
     qvtkWidgetPlaneZ->GetRenderWindow()->GetInteractor()->SetInteractorStyle(zStyle);
 	qvtkWidgetPlaneZ2->GetRenderWindow()->GetInteractor()->SetInteractorStyle(zStyle);
     
+	// Set up Key Events
+	VMainWindow::setFocusPolicy(Qt::StrongFocus);
+
     
     // Set up sliders
     xSlider->setRange(0, vd.width-1);

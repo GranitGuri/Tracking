@@ -3,12 +3,13 @@
 
 #include "vtkSmartPointer.h"
 #include "vtkImageImport.h"
-#include "vtkFixedPointVolumeRayCastMapper.h"
+#include "vtkGPUVolumeRayCastMapper.h"
 #include "vtkImageReslice.h"
 #include "vtkImageViewer2.h"
 #include "vtkInteractorStyleTrackballCamera.h"
 
 #include <QMainWindow>
+#include "QKeyEvent"
 
 #include "ui_VMainWindow.h"
 #include "VentTrackS.h"
@@ -27,7 +28,7 @@ public:
 
 private:
     vtkSmartPointer<vtkImageImport> *image, *image2, xImg;
-    vtkSmartPointer<vtkFixedPointVolumeRayCastMapper> volumeMapper, volumeMapper2;
+    vtkSmartPointer<vtkGPUVolumeRayCastMapper> volumeMapper, volumeMapper2;
     vtkSmartPointer<vtkImageReslice> xSlice, ySlice, zSlice;
     vtkSmartPointer<vtkImageReslice> xSlice2, ySlice2, zSlice2;
     //vtkSmartPointer<vtkImageImport> xSlice2, ySlice2, zSlice2;
@@ -39,6 +40,19 @@ private:
     void createXImg();
     void createYImg();
     void createZImg();
+
+protected:
+
+	void VMainWindow::keyPressEvent(QKeyEvent *event)
+	{
+		switch (event->key())
+		{
+		case (Qt::Key_Up):
+			cout << "UP";
+			break;
+		}
+		VMainWindow::update();
+	}
     
 signals:
     void xChanged(int x);
