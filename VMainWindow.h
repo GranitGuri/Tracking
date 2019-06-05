@@ -59,6 +59,9 @@ signals:
     void xChanged(int x);
     void yChanged(int y);
     void zChanged(int z);
+	void fxChanged(int x);
+	void fyChanged(int y);
+	void fzChanged(int z);
     void tChanged(int t);
 };
 

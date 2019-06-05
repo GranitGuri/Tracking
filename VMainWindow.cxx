@@ -292,33 +292,42 @@ void VMainWindow::changeX(int x)
 {
     cout << "New x position: " << x << "\n";
     xPos = x;
+	float v = vd.width;
+	fxPos = round(x / v * (vd.fWidth-1));
     xSlice->SetResliceAxesOrigin(xPos, vd.height/2, vd.depth/2);
     xSlice2->SetResliceAxesOrigin(fxPos, vd.fHeight/2, vd.fDepth/2);
     qvtkWidgetPlaneX->update();
     qvtkWidgetPlaneX2->update();
     emit xChanged(xPos);
+	emit fxChanged(fxPos);
 }
 
 void VMainWindow::changeY(int y)
 {
     cout << "New y position: " << y << "\n";
     yPos = y;
+	float v = vd.height;
+	fyPos = round(y / v * (vd.fHeight-1));
     ySlice->SetResliceAxesOrigin(vd.width/2, yPos, vd.depth/2);
     ySlice2->SetResliceAxesOrigin(vd.fWidth/2, fyPos, vd.fDepth/2);
     qvtkWidgetPlaneY->update();
     qvtkWidgetPlaneY2->update();
     emit yChanged(yPos);
+	emit fyChanged(fyPos);
 }
 
 void VMainWindow::changeZ(int z)
 {
     cout << "New z position: " << z << "\n";
     zPos = z;
+	float v = vd.depth;
+	fzPos = round(z / v * (vd.fDepth-1));
     zSlice->SetResliceAxesOrigin(vd.width/2, vd.height/2, zPos);
     zSlice2->SetResliceAxesOrigin(vd.fWidth/2, vd.fHeight/2, fzPos);
     qvtkWidgetPlaneZ->update();
     qvtkWidgetPlaneZ2->update();
     emit zChanged(zPos);
+	emit fzChanged(fzPos);
 }
 
 void VMainWindow::changeT(int t)
