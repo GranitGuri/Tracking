@@ -18,7 +18,7 @@
 class VolumeData
 {
 public:
-    unsigned short height, width;
+    unsigned int height, fHeight, width, fWidth, fDepth;
     unsigned int numVolumes, depth;
     unsigned char * data;
     std::string fileType;
@@ -26,7 +26,9 @@ public:
     std::ifstream inFile;
     
     int volumeSize;
-    
+	int featureSize;
+
+	unsigned char** feat;
     unsigned char** frame;
     unsigned char** fro;
     unsigned char** dx; // Displacement
@@ -40,6 +42,7 @@ public:
     void drawGrid();
     void highlightSpeckles();
     void computeGradientMagnitude();
+	void fillFeat(int pos);
 	void showFeature(int x, int y, int z, int f);
 	void fillSeed(int x, int y, int z, int f);
 	void FilterCreation(int size);
@@ -55,6 +58,10 @@ public:
 	int idx_get_x(int idx);
 	int idx_get_y(int idx);
 	int idx_get_z(int idx);
+	int idxf(int x, int y, int z);
+	int idxf_get_x(int idx);
+	int idxf_get_y(int idx);
+	int idxf_get_z(int idx);
     
     void bma();
 };

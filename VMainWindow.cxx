@@ -43,6 +43,7 @@ VMainWindow::VMainWindow()
     
     importImages();
     xPos = vd.width/2, yPos = vd.height/2, zPos = vd.depth/2;
+	fxPos = vd.fWidth / 2, fyPos = vd.fHeight / 2, fzPos = vd.fDepth / 2;
     tPos = 0;
     
     /* Set up volume rendering */
@@ -184,7 +185,7 @@ VMainWindow::VMainWindow()
     xSlice2->SetInputConnection(image2[tPos]->GetOutputPort());
     xSlice2->SetOutputDimensionality(2);
     xSlice2->SetResliceAxesDirectionCosines(0, 1, 0, 0, 0, -1, 1, 0, 0); // (y, -z, x)
-    xSlice2->SetResliceAxesOrigin(xPos, yPos, zPos);
+    xSlice2->SetResliceAxesOrigin(fxPos, fyPos, fzPos);
     xSlice2->SetInterpolationModeToLinear();
     
 //    createXImg();
@@ -206,7 +207,7 @@ VMainWindow::VMainWindow()
     ySlice2->SetInputConnection(image2[tPos]->GetOutputPort());
     ySlice2->SetOutputDimensionality(2);
     ySlice2->SetResliceAxesDirectionCosines(1, 0, 0, 0, 0, -1, 0, 1, 0); // (x, -z, y)
-    ySlice2->SetResliceAxesOrigin(xPos, yPos, zPos);
+    ySlice2->SetResliceAxesOrigin(fxPos, fyPos, fzPos);
     ySlice2->SetInterpolationModeToLinear();
     CreateInstance(yPlaneActor2, vtkImageActor);
     yPlaneActor2->GetMapper()->SetInputConnection(ySlice2->GetOutputPort());
@@ -218,7 +219,7 @@ VMainWindow::VMainWindow()
     zSlice2->SetInputConnection(image2[tPos]->GetOutputPort());
     zSlice2->SetOutputDimensionality(2);
     zSlice2->SetResliceAxesDirectionCosines(0, 1, 0, -1, 0, 0, 0, 0, 1); // (y, -x, z)
-    zSlice2->SetResliceAxesOrigin(xPos, yPos, zPos);
+    zSlice2->SetResliceAxesOrigin(fxPos, fyPos, fzPos);
     zSlice2->SetInterpolationModeToLinear();
     CreateInstance(zPlaneActor2, vtkImageActor);
     zPlaneActor2->GetMapper()->SetInputConnection(zSlice2->GetOutputPort());
@@ -292,7 +293,7 @@ void VMainWindow::changeX(int x)
     cout << "New x position: " << x << "\n";
     xPos = x;
     xSlice->SetResliceAxesOrigin(xPos, vd.height/2, vd.depth/2);
-    xSlice2->SetResliceAxesOrigin(xPos, vd.height/2, vd.depth/2);
+    xSlice2->SetResliceAxesOrigin(fxPos, vd.fHeight/2, vd.fDepth/2);
     qvtkWidgetPlaneX->update();
     qvtkWidgetPlaneX2->update();
     emit xChanged(xPos);
@@ -303,7 +304,7 @@ void VMainWindow::changeY(int y)
     cout << "New y position: " << y << "\n";
     yPos = y;
     ySlice->SetResliceAxesOrigin(vd.width/2, yPos, vd.depth/2);
-    ySlice2->SetResliceAxesOrigin(vd.width/2, yPos, vd.depth/2);
+    ySlice2->SetResliceAxesOrigin(vd.fWidth/2, fyPos, vd.fDepth/2);
     qvtkWidgetPlaneY->update();
     qvtkWidgetPlaneY2->update();
     emit yChanged(yPos);
@@ -314,7 +315,7 @@ void VMainWindow::changeZ(int z)
     cout << "New z position: " << z << "\n";
     zPos = z;
     zSlice->SetResliceAxesOrigin(vd.width/2, vd.height/2, zPos);
-    zSlice2->SetResliceAxesOrigin(vd.width/2, vd.height/2, zPos);
+    zSlice2->SetResliceAxesOrigin(vd.fWidth/2, vd.fHeight/2, fzPos);
     qvtkWidgetPlaneZ->update();
     qvtkWidgetPlaneZ2->update();
     emit zChanged(zPos);
@@ -379,7 +380,7 @@ void VMainWindow::importImages()
         image2[i] = vtkSmartPointer<vtkImageImport>::New();
         image2[i]->SetDataSpacing(1,1,1);
         image2[i]->SetDataOrigin(0, 0, 0);
-        image2[i]->SetWholeExtent(0, vd.width-1, 0, vd.height-1, 0, vd.depth-1);
+        image2[i]->SetWholeExtent(0, vd.fWidth-1, 0, vd.fHeight-1, 0, vd.fDepth-1);
         image2[i]->SetDataExtentToWholeExtent();
         image2[i]->SetDataScalarTypeToUnsignedChar();
         image2[i]->SetNumberOfScalarComponents(1);

@@ -36,6 +36,7 @@ private:
     vtkSmartPointer<vtkRenderer> xPlaneRenderer, yPlaneRenderer, zPlaneRenderer;
     vtkSmartPointer<vtkRenderer> xPlaneRenderer2, yPlaneRenderer2, zPlaneRenderer2;
     int xPos, yPos, zPos, tPos;
+	int fxPos, fyPos, fzPos;
     void importImages();
     void createXImg();
     void createYImg();

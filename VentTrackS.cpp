@@ -15,10 +15,9 @@
 
 using namespace std;
 VolumeData vd;
-extern VMainWindow* MWP;
 
-int FEATURELENGTH = 3;
-int SEARCHDISTANCE = 5;
+int FEATURELENGTH = 10;
+int SEARCHDISTANCE = 1;
 int FRAMEDISTANCE = 1;
 
 void VolumeData::readPhilipsDicomFile()
@@ -96,8 +95,9 @@ void VolumeData::readPhilipsDicomFile()
     }
     
     /* Read frames */
-    
+	fHeight = FEATURELENGTH; fWidth = FEATURELENGTH; fDepth = FEATURELENGTH;
     volumeSize = height * width * depth;
+	featureSize = fHeight * fWidth * fDepth;
     frame = new unsigned char*[numVolumes];
     fro   = new unsigned char*[numVolumes];
     dx   = new unsigned char*[numVolumes];
@@ -105,28 +105,24 @@ void VolumeData::readPhilipsDicomFile()
     dz   = new unsigned char*[numVolumes];
     dm   = new unsigned char*[numVolumes];
     for (unsigned int i=0; i<numVolumes; i++) {
-        frame[i] = new unsigned char[volumeSize];
+        frame[i] = new unsigned char[featureSize];
         fro[i] = new unsigned char[volumeSize];
         dx[i] = new unsigned char[volumeSize];
         dy[i] = new unsigned char[volumeSize];
         dz[i] = new unsigned char[volumeSize];
         dm[i] = new unsigned char[volumeSize];
-        for (unsigned int i=0; i<width*height*depth; i++) {
-//            dx[i]=dy[i]=dz[i]=dm[i]=0;
-        }
         inFile.read((char*) fro[i], volumeSize);
     }
-    computeGradientMagnitude();
-	FilterCreation(FEATURELENGTH);
-	int pos = idx(93, 95, 108);
-	fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), 0);
-	Print3D();
-	SSDforward(pos);
-	SSDbackward(pos);
+	int pos = idx(100, 100, 100);
+	fillFeat(pos);
+//	FilterCreation(FEATURELENGTH);
+//	fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), 0);
+//	Print3D();
+//	SSDforward(pos);
+//	SSDbackward(pos);
 	cout << endl;
     inFile.close();
 }
-
 
 /*Make 3D Vector
 Input x,y,z Dimensions of a 3D Matrix, value Type of Input(Int, Char, ...)
@@ -145,7 +141,7 @@ void VolumeData::fillSeed(int x, int y, int z, int f) {
 		for (int i = z; i < z + FEATURELENGTH; i++)
 			for (int j = y; j < y + FEATURELENGTH; j++)
 				for (int k = x; k < x + FEATURELENGTH; k++)
-					feature[k-x][j-y][i-z] = frame[f][idx(k, j, i)];
+					feature[k-x][j-y][i-z] = frame[f][idx(k-x, j-y, i-z)];
 }
 
 void VolumeData::showFeature(int x, int y, int z, int f) {
@@ -220,7 +216,7 @@ void VolumeData::Print3D() {
 		{
 			for (int x = 0; x < GKernel.size(); x++)
 			{
-				cout << +frame[0][idx(x+100, y+100, z+100)];
+				cout << +frame[0][idx(x, y, z)];
 			}
 			cout << "    ";
 		}
@@ -250,7 +246,7 @@ double VolumeData::sumOfSqareDifference(int x, int y, int z, int f, int length)
 			{
 				//int a = +feature[k - x][j - y][i - z];
 				//int b = +frame[f][idx(k, j, i)];
-				diff = GKernel[k - x][j - y][i - z] * (+feature[k - x][j - y][i - z] - +frame[f][idx(k, j, i)]);
+				diff = GKernel[k - x][j - y][i - z] * (+feature[k - x][j - y][i - z] - +frame[f][idx(k - x, j - y, i - z)]);
 				sum += diff * diff;
 			}
 		}
@@ -336,13 +332,16 @@ void VolumeData::drawGrid() {
     }
 }
 
-void VolumeData::computeGradientMagnitude() {
-    int dx, dy, dz; 
-    for (unsigned int f=0; f<numVolumes; f++) {
-        for (int x=0; x<height; x++) {
-            for (int y=0; y<width; y++) {
-                for (unsigned int z=0; z<depth; z++) {
-                    frame[f][idx(x,y,z)] = fro[f][idx(x,y,z)];                    
+void VolumeData::fillFeat(int pos) {
+	int x = idx_get_x(pos);
+	int y = idx_get_y(pos);
+	int z = idx_get_z(pos);
+    for (unsigned int f = 0; f < numVolumes; f++) {
+        for (int i = 0; i < fHeight; i++) {
+            for (int j = 0; j < fWidth; j++) {
+                for (int  k = 0; k < fDepth; k++) {
+					char bla = fro[f][idx(x + i, y + j, z + k)];
+                    frame[f][idxf(i,j,k)] = fro[f][idx(x+i, y+j ,z+k)];                    
                 }
             }
         }
@@ -397,6 +396,10 @@ int VolumeData::specklitude(int f, int x, int y, int z) {
 
 int VolumeData::idx(int x, int y, int z) {
     return x*width + y + z*width*height;
+}
+
+int VolumeData::idxf(int x, int y, int z) {
+	return x * fWidth + y + z * fWidth*fHeight;
 }
 
 int VolumeData::idx_get_x(int idx) {
