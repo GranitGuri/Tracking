@@ -99,6 +99,7 @@ void VolumeData::readPhilipsDicomFile()
 	fHeight = FEATURELENGTH; fWidth = FEATURELENGTH; fDepth = FEATURELENGTH;
     volumeSize = height * width * depth;
 	featureSize = fHeight * fWidth * fDepth;
+	feat = new unsigned int[numVolumes];
     frame = new unsigned char*[numVolumes];
     fro   = new unsigned char*[numVolumes];
     dx   = new unsigned char*[numVolumes];
@@ -146,10 +147,10 @@ void VolumeData::fillSeed(int x, int y, int z, int f) {
 }
 
 void VolumeData::showFeature(int x, int y, int z, int f) {
-	for (int i = z-1; i < z + FEATURELENGTH+2; i++)
-		for (int j = y-1; j < y + FEATURELENGTH+2; j++)
-			for (int k = x-1; k < x + FEATURELENGTH+2; k++)
-				if(i == z-1 || i == FEATURELENGTH + 1 + z || j == y - 1 || j == FEATURELENGTH + 1 + y || k == x - 1 || k == FEATURELENGTH + 1 + x)
+	for (int i = z; i < z + FEATURELENGTH+2; i++)
+		for (int j = y; j < y + FEATURELENGTH+2; j++)
+			for (int k = x; k < x + FEATURELENGTH+2; k++)
+				if(i == z || i == FEATURELENGTH + 1 + z || j == y || j == FEATURELENGTH + 1 + y || k == x || k == FEATURELENGTH + 1 + x)
 					fro[f][idx(k, j, i)] = 255;
 }
 
@@ -340,6 +341,7 @@ void VolumeData::fillFeat() {
         }
 		showFeature(x, y, z, f);
 		pos = sumOfSqares(f);
+		feat[f] = pos;
 		int x = idx_get_x(pos);
 		int y = idx_get_y(pos);
 		int z = idx_get_z(pos);

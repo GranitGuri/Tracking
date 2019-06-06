@@ -28,7 +28,7 @@ public:
     int volumeSize;
 	int featureSize;
 
-	unsigned char** feat;
+	unsigned int* feat;
     unsigned char** frame;
     unsigned char** fro;
     unsigned char** dx; // Displacement

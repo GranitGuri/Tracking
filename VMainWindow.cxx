@@ -293,7 +293,9 @@ void VMainWindow::changeX(int x)
     cout << "New x position: " << x << "\n";
     xPos = x;
 	float v = vd.width;
-	fxPos = round(x / v * (vd.fWidth-1));
+	if (x >= vd.idx_get_x(vd.feat[tPos])-1 && x < vd.idx_get_x(vd.feat[tPos])-1 + vd.width) {
+		fxPos = x - vd.idx_get_x(vd.feat[tPos]);
+	}
     xSlice->SetResliceAxesOrigin(xPos, vd.height/2, vd.depth/2);
     xSlice2->SetResliceAxesOrigin(fxPos, vd.fHeight/2, vd.fDepth/2);
     qvtkWidgetPlaneX->update();
@@ -307,7 +309,9 @@ void VMainWindow::changeY(int y)
     cout << "New y position: " << y << "\n";
     yPos = y;
 	float v = vd.height;
-	fyPos = round(y / v * (vd.fHeight-1));
+	if (y >= vd.idx_get_y(vd.feat[tPos]) - 1 && y < vd.idx_get_y(vd.feat[tPos]) - 1 + vd.width) {
+		fyPos = y - vd.idx_get_y(vd.feat[tPos]);
+	}
     ySlice->SetResliceAxesOrigin(vd.width/2, yPos, vd.depth/2);
     ySlice2->SetResliceAxesOrigin(vd.fWidth/2, fyPos, vd.fDepth/2);
     qvtkWidgetPlaneY->update();
@@ -321,7 +325,9 @@ void VMainWindow::changeZ(int z)
     cout << "New z position: " << z << "\n";
     zPos = z;
 	float v = vd.depth;
-	fzPos = round(z / v * (vd.fDepth-1));
+	if (z >= vd.idx_get_z(vd.feat[tPos]) - 1 && z < vd.idx_get_z(vd.feat[tPos]) - 1 + vd.width) {
+		fzPos = z-2 - vd.idx_get_z(vd.feat[tPos]);
+	}
     zSlice->SetResliceAxesOrigin(vd.width/2, vd.height/2, zPos);
     zSlice2->SetResliceAxesOrigin(vd.fWidth/2, vd.fHeight/2, fzPos);
     qvtkWidgetPlaneZ->update();
