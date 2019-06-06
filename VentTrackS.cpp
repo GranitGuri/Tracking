@@ -16,9 +16,9 @@
 using namespace std;
 VolumeData vd;
 
-int FEATURELENGTH = 3;
+int FEATURELENGTH = 20;
 int SEARCHDISTANCE = 1;
-int FRAMEDISTANCE = 2;
+int FRAMEDISTANCE = 0;
 int pos;
 
 void VolumeData::readPhilipsDicomFile()
@@ -118,7 +118,7 @@ void VolumeData::readPhilipsDicomFile()
 	FilterCreation(FEATURELENGTH);
 	fillFeat();
 	fillSeed(100, 100, 100, 0);
-	Print3D();
+//	Print3D();
 //	SSDforward(pos);
 //	SSDbackward(pos);
 	cout << endl;
@@ -146,10 +146,11 @@ void VolumeData::fillSeed(int x, int y, int z, int f) {
 }
 
 void VolumeData::showFeature(int x, int y, int z, int f) {
-	for (int i = z; i < z + FEATURELENGTH; i++)
-		for (int j = y; j < y + FEATURELENGTH; j++)
-			for (int k = x; k < x + FEATURELENGTH; k++)
-					frame[f][idx(k, j, i)] = 255;
+	for (int i = z-1; i < z + FEATURELENGTH+2; i++)
+		for (int j = y-1; j < y + FEATURELENGTH+2; j++)
+			for (int k = x-1; k < x + FEATURELENGTH+2; k++)
+				if(i == z-1 || i == FEATURELENGTH + 1 + z || j == y - 1 || j == FEATURELENGTH + 1 + y || k == x - 1 || k == FEATURELENGTH + 1 + x)
+					fro[f][idx(k, j, i)] = 255;
 }
 
 /**
@@ -263,7 +264,12 @@ double VolumeData::sumOfSqareDifference(int sx, int sy, int sz, int f) {
 				//cout << "fro+1" << +fro[f+1][idx(k, j, i)] << endl;
 				//cout << "fro" << +fro[f][idx(k, j, i)] << endl;
 				//cout << "frame" << +frame[f][idx(k-x, j-y, i-z)] << endl;
-				diff = GKernel[i][j][k] * (frame[f][idxf(i, j, k)] - fro[f+1][idx(i + sx, j + sy, k + sz)]);
+				if (f < numVolumes-1) {
+					diff = GKernel[i][j][k] * (frame[f][idxf(i, j, k)] - fro[f + 1][idx(i + sx, j + sy, k + sz)]);
+				}
+				else {
+					diff = GKernel[i][j][k] * (frame[f][idxf(i, j, k)] - fro[f][idx(i + sx, j + sy, k + sz)]);
+				}
 				sum += diff * diff;
 			}
 		}
@@ -324,7 +330,7 @@ void VolumeData::fillFeat() {
 	int x = idx_get_x(pos);
 	int y = idx_get_y(pos);
 	int z = idx_get_z(pos);
-    for (unsigned int f = 0; f < numVolumes-1; f++) {
+    for (unsigned int f = 0; f < numVolumes; f++) {
         for (int i = 0; i < FEATURELENGTH; i++) {
             for (int j = 0; j < FEATURELENGTH; j++) {
                 for (int  k = 0; k < FEATURELENGTH; k++) {
@@ -332,6 +338,7 @@ void VolumeData::fillFeat() {
                 }
             }
         }
+		showFeature(x, y, z, f);
 		pos = sumOfSqares(f);
 		int x = idx_get_x(pos);
 		int y = idx_get_y(pos);
