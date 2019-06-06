@@ -40,9 +40,7 @@ public:
 	void doSomething();
     void resetFrames();
     void drawGrid();
-    void highlightSpeckles();
-    void computeGradientMagnitude();
-	void fillFeat(int pos);
+	void fillFeat();
 	void showFeature(int x, int y, int z, int f);
 	void fillSeed(int x, int y, int z, int f);
 	void FilterCreation(int size);
@@ -50,8 +48,8 @@ public:
 	void SSDbackward(int pos);
 	void SSDforward(int pos);
 
-	int sumOfSqares(int x, int y, int z, int f, int length);
-	double sumOfSqareDifference(int x, int y, int z, int f, int length);
+	int sumOfSqares(int f);
+	double sumOfSqareDifference(int x, int y, int z, int f);
     int gradientMagnitude(int f, int x, int y, int z);
     int specklitude(int f, int x, int y, int z);
     int idx(int x, int y, int z);

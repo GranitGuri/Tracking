@@ -16,9 +16,10 @@
 using namespace std;
 VolumeData vd;
 
-int FEATURELENGTH = 10;
+int FEATURELENGTH = 3;
 int SEARCHDISTANCE = 1;
-int FRAMEDISTANCE = 1;
+int FRAMEDISTANCE = 2;
+int pos;
 
 void VolumeData::readPhilipsDicomFile()
 {
@@ -113,11 +114,11 @@ void VolumeData::readPhilipsDicomFile()
         dm[i] = new unsigned char[volumeSize];
         inFile.read((char*) fro[i], volumeSize);
     }
-	int pos = idx(100, 100, 100);
-	fillFeat(pos);
-//	FilterCreation(FEATURELENGTH);
-//	fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), 0);
-//	Print3D();
+	pos = idx(100, 100, 100);
+	FilterCreation(FEATURELENGTH);
+	fillFeat();
+	fillSeed(100, 100, 100, 0);
+	Print3D();
 //	SSDforward(pos);
 //	SSDbackward(pos);
 	cout << endl;
@@ -138,10 +139,10 @@ vector<vector<vector<double>>> feature = make_3d_vector(FEATURELENGTH, FEATURELE
 vector<vector<vector<double>>> GKernel = make_3d_vector(FEATURELENGTH, FEATURELENGTH, FEATURELENGTH, 0.0);
 
 void VolumeData::fillSeed(int x, int y, int z, int f) {
-		for (int i = z; i < z + FEATURELENGTH; i++)
-			for (int j = y; j < y + FEATURELENGTH; j++)
-				for (int k = x; k < x + FEATURELENGTH; k++)
-					feature[k-x][j-y][i-z] = frame[f][idx(k-x, j-y, i-z)];
+		for (int i = 0; i < FEATURELENGTH; i++)
+			for (int j = 0; j < FEATURELENGTH; j++)
+				for (int k = 0; k < FEATURELENGTH; k++)
+					feature[k][j][i] = +fro[f][idx(k+x, j+y, i+z)];
 }
 
 void VolumeData::showFeature(int x, int y, int z, int f) {
@@ -192,7 +193,7 @@ void VolumeData::Print3D() {
 		{
 			for (int x = 0; x < GKernel.size(); x++)
 			{
-				cout << GKernel[x][y][z];
+				cout << GKernel[x][y][z] << " ";
 			}
 			cout << "    ";
 		}
@@ -204,19 +205,35 @@ void VolumeData::Print3D() {
 		{
 			for (int x = 0; x < feature.size(); x++)
 			{
-				cout << feature[x][y][z];
+				cout << feature[x][y][z] << " ";
 			}
 			cout << "    ";
 		}
 		cout << endl;
 	}
-	for (int y = 0; y < GKernel[0].size(); y++)
+	for (int y = 0; y < 3; y++)
 	{
-		for (int z = 0; z < GKernel[0][0].size(); z++)
+		for (int z = 0; z < 3; z++)
 		{
-			for (int x = 0; x < GKernel.size(); x++)
+			for (int x = 0; x < 3; x++)
 			{
-				cout << +frame[0][idx(x, y, z)];
+				cout << +frame[0][idxf(x, y, z)] << " ";
+			}
+			cout << "    ";
+		}
+		cout << endl;
+	}
+
+	int x = 100;
+	int y = 100;
+	int z = 100;
+	for (int j = 0; j < 3; j++)
+	{
+		for (int k = 0; k < 3; k++)
+		{
+			for (int i = 0; i < 3; i++)
+			{
+				cout << +fro[0][idx(i+x, j+y, k+z)] << " ";
 			}
 			cout << "    ";
 		}
@@ -234,19 +251,19 @@ Sum of the cubes Values
 Input: x, y, z, frame, length
 Output: Integer
 */
-double VolumeData::sumOfSqareDifference(int x, int y, int z, int f, int length)
-{
+double VolumeData::sumOfSqareDifference(int sx, int sy, int sz, int f) {
 	double sum = 0;
 	double diff = 0;
-	for (int i = z; i < z + length; i++)
+	for (int i = 0; i < FEATURELENGTH; i++)
 	{
-		for (int j = y; j < y + length; j++)
+		for (int j = 0; j < FEATURELENGTH; j++)
 		{
-			for (int k = x; k < x + length; k++)
+			for (int k = 0; k <FEATURELENGTH; k++)
 			{
-				//int a = +feature[k - x][j - y][i - z];
-				//int b = +frame[f][idx(k, j, i)];
-				diff = GKernel[k - x][j - y][i - z] * (+feature[k - x][j - y][i - z] - +frame[f][idx(k - x, j - y, i - z)]);
+				//cout << "fro+1" << +fro[f+1][idx(k, j, i)] << endl;
+				//cout << "fro" << +fro[f][idx(k, j, i)] << endl;
+				//cout << "frame" << +frame[f][idx(k-x, j-y, i-z)] << endl;
+				diff = GKernel[i][j][k] * (frame[f][idxf(i, j, k)] - fro[f+1][idx(i + sx, j + sy, k + sz)]);
 				sum += diff * diff;
 			}
 		}
@@ -259,9 +276,10 @@ Sum of X Sqares
 Input: x, y, z, frame, length
 Output: Position of feature
 */
-int VolumeData::sumOfSqares(int x, int y, int z, int f, int length)
-{
-	int pos = idx(x, y, z);
+int VolumeData::sumOfSqares(int f){
+	int x = idx_get_x(pos);
+	int y = idx_get_y(pos);
+	int z = idx_get_z(pos);
 	double min = 1000000;
 	for (int i = z - SEARCHDISTANCE; i <= z + SEARCHDISTANCE; i++)
 	{
@@ -269,7 +287,7 @@ int VolumeData::sumOfSqares(int x, int y, int z, int f, int length)
 		{
 			for (int k = x - SEARCHDISTANCE; k <= x + SEARCHDISTANCE; k++)
 			{
-				double s = sumOfSqareDifference(k, j, i, f, length);
+				double s = sumOfSqareDifference(k, j, i, f);
 				if (min > s)
 				{
 					min = s;
@@ -290,7 +308,7 @@ void VolumeData::SSDforward(int pos)
 {
 	for (unsigned int i = 0; i < FRAMEDISTANCE; i++) {
 		fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
-		pos = sumOfSqares(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i + 1, FEATURELENGTH);
+		pos = sumOfSqares(i + 1);
 	}
 }
 
@@ -298,10 +316,28 @@ void VolumeData::SSDbackward(int pos)
 {
 	for (unsigned int i = FRAMEDISTANCE; i > 0; i--) {
 		fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
-		pos = sumOfSqares(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i - 1, FEATURELENGTH);
+		pos = sumOfSqares(i - 1);
 	}
 }
 
+void VolumeData::fillFeat() {
+	int x = idx_get_x(pos);
+	int y = idx_get_y(pos);
+	int z = idx_get_z(pos);
+    for (unsigned int f = 0; f < numVolumes-1; f++) {
+        for (int i = 0; i < FEATURELENGTH; i++) {
+            for (int j = 0; j < FEATURELENGTH; j++) {
+                for (int  k = 0; k < FEATURELENGTH; k++) {
+                    frame[f][idxf(i,j,k)] = fro[f][idx(x+i, y+j ,z+k)];                 
+                }
+            }
+        }
+		pos = sumOfSqares(f);
+		int x = idx_get_x(pos);
+		int y = idx_get_y(pos);
+		int z = idx_get_z(pos);
+    }
+}
 
 /******************************************************************************************/
 /***********************************BeispielFunktionen*************************************/
@@ -329,22 +365,6 @@ void VolumeData::drawGrid() {
             for (unsigned int z = 0; z < depth   ; z++)
                 for (int x = 0; x < height; x++)
                     frame[f][idx(x,y,z)] = 255;
-    }
-}
-
-void VolumeData::fillFeat(int pos) {
-	int x = idx_get_x(pos);
-	int y = idx_get_y(pos);
-	int z = idx_get_z(pos);
-    for (unsigned int f = 0; f < numVolumes; f++) {
-        for (int i = 0; i < fHeight; i++) {
-            for (int j = 0; j < fWidth; j++) {
-                for (int  k = 0; k < fDepth; k++) {
-					char bla = fro[f][idx(x + i, y + j, z + k)];
-                    frame[f][idxf(i,j,k)] = fro[f][idx(x+i, y+j ,z+k)];                    
-                }
-            }
-        }
     }
 }
 
