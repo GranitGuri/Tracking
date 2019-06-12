@@ -28,6 +28,7 @@ public:
     int volumeSize;
 	int featureSize;
 
+	unsigned char** gradFrame;
 	unsigned int* feat;
     unsigned char** frame;
     unsigned char** fro;
@@ -38,20 +39,20 @@ public:
     
     void readPhilipsDicomFile();
 	void doSomething();
-    void resetFrames();
-    void drawGrid();
 	void fillFeat();
 	void showFeature(int x, int y, int z, int f);
 	void fillSeed(int x, int y, int z, int f);
 	void FilterCreation(int size);
+	void FilterCreation2(int size);
 	void Print3D();
 	void SSDbackward(int pos);
 	void SSDforward(int pos);
 
 	int sumOfSqares(int f);
 	double sumOfSqareDifference(int x, int y, int z, int f);
-    int gradientMagnitude(int f, int x, int y, int z);
-    int specklitude(int f, int x, int y, int z);
+    void gradientMagnitude();
+	void gaussianBlur();
+	void bit5map();
     int idx(int x, int y, int z);
 	int idx_get_x(int idx);
 	int idx_get_y(int idx);
@@ -61,14 +62,6 @@ public:
 	int idxf_get_y(int idx);
 	int idxf_get_z(int idx);
     
-    void bma();
 };
-
-
-int calcBrightness(int* x);
-int* findSpeckle(int* x);
-
-unsigned int sq(int x);
-unsigned int mgn(int x, int y, int z);
 
 #endif /* VentTrackS_hpp */

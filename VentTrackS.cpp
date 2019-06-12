@@ -16,10 +16,11 @@
 using namespace std;
 VolumeData vd;
 
-int FEATURELENGTH = 20;
-int SEARCHDISTANCE = 1;
+int FEATURELENGTH = 10;
+int SEARCHDISTANCE = 5;
 int FRAMEDISTANCE = 0;
 int pos;
+int KERNELSIZE = 3;
 
 void VolumeData::readPhilipsDicomFile()
 {
@@ -99,6 +100,7 @@ void VolumeData::readPhilipsDicomFile()
 	fHeight = FEATURELENGTH; fWidth = FEATURELENGTH; fDepth = FEATURELENGTH;
     volumeSize = height * width * depth;
 	featureSize = fHeight * fWidth * fDepth;
+	gradFrame = new unsigned char*[numVolumes];
 	feat = new unsigned int[numVolumes];
     frame = new unsigned char*[numVolumes];
     fro   = new unsigned char*[numVolumes];
@@ -107,6 +109,7 @@ void VolumeData::readPhilipsDicomFile()
     dz   = new unsigned char*[numVolumes];
     dm   = new unsigned char*[numVolumes];
     for (unsigned int i=0; i<numVolumes; i++) {
+		gradFrame[i] = new unsigned char[volumeSize];
         frame[i] = new unsigned char[featureSize];
         fro[i] = new unsigned char[volumeSize];
         dx[i] = new unsigned char[volumeSize];
@@ -117,6 +120,10 @@ void VolumeData::readPhilipsDicomFile()
     }
 	pos = idx(100, 100, 100);
 	FilterCreation(FEATURELENGTH);
+	FilterCreation2(KERNELSIZE);
+	gradientMagnitude();
+	//gaussianBlur();
+	bit5map();
 	fillFeat();
 	fillSeed(100, 100, 100, 0);
 //	Print3D();
@@ -138,6 +145,8 @@ std::vector<vector<vector<T>>> make_3d_vector(int z, int y, int x, T value = T{}
 
 vector<vector<vector<double>>> feature = make_3d_vector(FEATURELENGTH, FEATURELENGTH, FEATURELENGTH, 0.0);
 vector<vector<vector<double>>> GKernel = make_3d_vector(FEATURELENGTH, FEATURELENGTH, FEATURELENGTH, 0.0);
+vector<vector<vector<double>>> GKernel2 = make_3d_vector(3, 3, 3, 0.0);
+
 
 void VolumeData::fillSeed(int x, int y, int z, int f) {
 		for (int i = 0; i < FEATURELENGTH; i++)
@@ -151,7 +160,7 @@ void VolumeData::showFeature(int x, int y, int z, int f) {
 		for (int j = y; j < y + FEATURELENGTH+2; j++)
 			for (int k = x; k < x + FEATURELENGTH+2; k++)
 				if(i == z || i == FEATURELENGTH + 1 + z || j == y || j == FEATURELENGTH + 1 + y || k == x || k == FEATURELENGTH + 1 + x)
-					fro[f][idx(k, j, i)] = 255;
+					gradFrame[f][idx(k, j, i)] = 255;
 }
 
 /**
@@ -185,6 +194,34 @@ void VolumeData::FilterCreation(int size)
 		for (int j = 0; j < size; ++j)
 			for (int k = 0; k < size; ++k)
 				GKernel[i][j][k] /= sum;
+}
+
+void VolumeData::FilterCreation2(int size)
+{
+	// intialising standard deviation to 1.0 
+	double sigma = 1.0;
+	double r, s = 2.0 * sigma * sigma;
+
+	// sum is for normalization 
+	double sum = 0.0;
+	int ksize = (size - 1) / 2;
+
+	// generating kernel 
+	for (int x = -ksize; x <= ksize; x++) {
+		for (int y = -ksize; y <= ksize; y++) {
+			for (int z = -ksize; z <= ksize; z++) {
+				r = x * x + y * y + z * z;
+				GKernel2[x + ksize][y + ksize][z + ksize] = (exp(-r / s));
+				sum += GKernel2[x + ksize][y + ksize][z + ksize];
+			}
+		}
+	}
+
+	// normalising the Kernel 
+	for (int i = 0; i < size; ++i)
+		for (int j = 0; j < size; ++j)
+			for (int k = 0; k < size; ++k)
+				GKernel2[i][j][k] /= sum;
 }
 
 void VolumeData::Print3D() {
@@ -266,10 +303,10 @@ double VolumeData::sumOfSqareDifference(int sx, int sy, int sz, int f) {
 				//cout << "fro" << +fro[f][idx(k, j, i)] << endl;
 				//cout << "frame" << +frame[f][idx(k-x, j-y, i-z)] << endl;
 				if (f < numVolumes-1) {
-					diff = GKernel[i][j][k] * (frame[f][idxf(i, j, k)] - fro[f + 1][idx(i + sx, j + sy, k + sz)]);
+					diff = GKernel[i][j][k] * (frame[f][idxf(i, j, k)] - gradFrame[f + 1][idx(i + sx, j + sy, k + sz)]);
 				}
 				else {
-					diff = GKernel[i][j][k] * (frame[f][idxf(i, j, k)] - fro[f][idx(i + sx, j + sy, k + sz)]);
+					diff = GKernel[i][j][k] * (frame[f][idxf(i, j, k)] - gradFrame[f][idx(i + sx, j + sy, k + sz)]);
 				}
 				sum += diff * diff;
 			}
@@ -335,12 +372,12 @@ void VolumeData::fillFeat() {
         for (int i = 0; i < FEATURELENGTH; i++) {
             for (int j = 0; j < FEATURELENGTH; j++) {
                 for (int  k = 0; k < FEATURELENGTH; k++) {
-                    frame[f][idxf(i,j,k)] = fro[f][idx(x+i, y+j ,z+k)];                 
+                    frame[f][idxf(i,j,k)] = gradFrame[f][idx(x+i, y+j ,z+k)];                 
                 }
             }
         }
-		showFeature(x, y, z, f);
 		pos = sumOfSqares(f);
+		showFeature(x, y, z, f);
 		feat[f] = pos;
 		int x = idx_get_x(pos);
 		int y = idx_get_y(pos);
@@ -349,79 +386,108 @@ void VolumeData::fillFeat() {
 }
 
 /******************************************************************************************/
-/***********************************BeispielFunktionen*************************************/
+/***********************************Bildverbesserung***************************************/
 /******************************************************************************************/
 
-void VolumeData::resetFrames() {
-    for (unsigned int i=0; i<numVolumes; i++)
-        for (int j=0; j<volumeSize; j++)
-            frame[i][j] = fro[i][j];
-    
+void VolumeData::gradientMagnitude() {
+	int dx = 0;
+	int dy = 0;
+	int dz = 0;
+	for (int f = 0; f < numVolumes; f++) 
+	{
+		for (int i = 0; i < depth; i++)
+		{
+			for (int j = 0; j < width; j++)
+			{
+				for (int k = 0; k < height; k++)
+				{
+					if (i == 0 || i == depth-1 || j == 0 || j == width-1 || k == 0 || k == height-1) {
+						gradFrame[f][idx(k, j, i)] = 0;
+					}
+					else {
+						dx = (fro[f][idx(k - 1, j, i)] + fro[f][idx(k + 1, j, i)]) / 2;
+						dx = (fro[f][idx(k, j - 1, i)] + fro[f][idx(k, j + 1, i)]) / 2;
+						dx = (fro[f][idx(k, j, i - 1)] + fro[f][idx(k, j, i + 1)]) / 2;
+						gradFrame[f][idx(k, j, i)] = sqrt(dx*dx + dy * dy + dz * dz);
+					}
+				}
+			}
+		}
+	}
 }
 
-void VolumeData::drawGrid() {
-    for (unsigned int f=0; f<numVolumes; f++) {
-        int itv = 50;
-        for (unsigned int z = 0; z < depth; z += itv)
-            for (int x = 0; x < height   ; x++)
-                for (int y = 0; y < width; y++)
-                    frame[f][idx(x,y,z)] = 255;
-        for (int x = 0; x < height; x += itv)
-            for (unsigned int z = 0; z < depth   ; z++)
-                for (int y = 0; y < width; y++)
-                    frame[f][idx(x,y,z)] = 255;
-        for (int y = 0; y < width; y += itv)
-            for (unsigned int z = 0; z < depth   ; z++)
-                for (int x = 0; x < height; x++)
-                    frame[f][idx(x,y,z)] = 255;
-    }
+void VolumeData::gaussianBlur() {
+	int dx = 0;
+	int dy = 0;
+	int dz = 0;
+	for (int f = 0; f < numVolumes; f++)
+	{
+		for (int i = 0; i < depth; i++)
+		{
+			for (int j = 0; j < width; j++)
+			{
+				for (int k = 0; k < height; k++)
+				{
+					if (i == 0 || i == depth - 1 || j == 0 || j == width - 1 || k == 0 || k == height - 1) {
+						gradFrame[f][idx(k, j, i)] = 0;
+					}
+					else {
+						for (int z = 0; z < 3; z++)
+						{
+							for (int y = 0; y < 3; y++)
+							{
+								for (int x = 0; x < 3; x++)
+								{
+									fro[f][idx(k, j, i)] = 0;
+									fro[f][idx(k, j, i)] += gradFrame[f][idx(k + x - 1, j + y - 1, i + z - 1)] * GKernel2[x][y][z];
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
-int VolumeData::gradientMagnitude(int f, int x, int y, int z) {
-    int dx, dy, dz;
-    
-    if (x==0) dx = 2 * (fro[f][idx(x,y,z)] - fro[f][idx(x+1,y,z)]);
-    else
-        if (x==height-1) dx = 2 * (fro[f][idx(x,y,z)] - fro[f][idx(x-1,y,z)]);
-        else dx = fro[f][idx(x+1,y,z)] - fro[f][idx(x-1,y,z)];
-    
-    if (y==0) dy = 2 * (fro[f][idx(x,y,z)] - fro[f][idx(x,y+1,z)]);
-    else
-        if (y==width-1) dy = 2 * (fro[f][idx(x,y,z)] - fro[f][idx(x,y-1,z)]);
-        else dy = fro[f][idx(x,y+1,z)] - fro[f][idx(x,y-1,z)];
-    
-    if (z==0) dz = 2 * (fro[f][idx(x,y,z)] - fro[f][idx(x,y,z+1)]);
-    else
-        if (z==depth-1) dz = 2 * (fro[f][idx(x,y,z)] - fro[f][idx(x,y,z-1)]);
-        else dz = fro[f][idx(x,y,z+1)] - fro[f][idx(x,y,z-1)];
-    
-    return dx*dx+dy*dy+dz*dz;
+void VolumeData::bit5map() {
+	int dx = 0;
+	int dy = 0;
+	int dz = 0;
+	for (int f = 0; f < numVolumes; f++)
+	{
+		for (int i = 0; i < depth; i++)
+		{
+			for (int j = 0; j < width; j++)
+			{
+				for (int k = 0; k < height; k++)
+				{
+					if (gradFrame[f][idx(k, j, i)] <= 50) {
+						gradFrame[f][idx(k, j, i)] = 0;
+					}
+					else if (gradFrame[f][idx(k, j, i)] > 50 && gradFrame[f][idx(k, j, i)] <= 75){
+						gradFrame[f][idx(k, j, i)] = 50;
+					}
+					else if (gradFrame[f][idx(k, j, i)] > 75 && gradFrame[f][idx(k, j, i)] <= 125) {
+						gradFrame[f][idx(k, j, i)] = 100;
+					}
+					else if (gradFrame[f][idx(k, j, i)] > 125 && gradFrame[f][idx(k, j, i)] <= 175) {
+						gradFrame[f][idx(k, j, i)] = 150;
+					}
+					else if (gradFrame[f][idx(k, j, i)] > 175 && gradFrame[f][idx(k, j, i)] <= 225) {
+						gradFrame[f][idx(k, j, i)] = 200;
+					}
+					else{
+						gradFrame[f][idx(k, j, i)] = 255;
+					}
+				}
+			}
+		}
+	}
 }
-
-int VolumeData::specklitude(int f, int x, int y, int z) {
-    int dx, dy, dz;
-    
-    if (x==0) dx = 2 * (fro[f][idx(x,y,z)] - fro[f][idx(x+1,y,z)]);
-    else
-        if (x==height-1) dx = 2 * (fro[f][idx(x,y,z)] - fro[f][idx(x-1,y,z)]);
-        else dx = (fro[f][idx(x+1,y,z)] - fro[f][idx(x,y,z)])
-            * (fro[f][idx(x-1,y,z)] - fro[f][idx(x,y,z)]);
-    
-    if (y==0) dy = 2 * (fro[f][idx(x,y,z)] - fro[f][idx(x,y+1,z)]);
-    else
-        if (y==width-1) dy = 2 * (fro[f][idx(x,y,z)] - fro[f][idx(x,y-1,z)]);
-        else dy = (fro[f][idx(x,y+1,z)] - fro[f][idx(x,y,z)])
-            * (fro[f][idx(x,y-1,z)] - fro[f][idx(x,y,z)]);
-    
-    if (z==0) dz = 2 * (fro[f][idx(x,y,z)] - fro[f][idx(x,y,z+1)]);
-    else
-        if (z==depth-1) dz = 2 * (fro[f][idx(x,y,z)] - fro[f][idx(x,y,z-1)]);
-        else dz = (fro[f][idx(x,y,z+1)] - fro[f][idx(x,y,z)])
-            * (fro[f][idx(x,y,z-1)] - fro[f][idx(x,y,z)]);
-    
-    //return dx*dx+dy*dy+dz*dz;
-    return dx*+dy+dz;
-}
+/******************************************************************************************/
+/***********************************Koordinaten********************************************/
+/******************************************************************************************/
 
 int VolumeData::idx(int x, int y, int z) {
     return x*width + y + z*width*height;
@@ -443,28 +509,3 @@ int VolumeData::idx_get_z(int idx) {
 	return floor(idx / (width*height));
 }
 
-int calcBrightness(unsigned int* x) {
-    int windowSize = 3;
-        // Calculate brightness
-        int brightness = 0;
-        for (int i = -windowSize; i <= windowSize; i++) {
-            for (int j = -windowSize; j <= windowSize; j++) {
-                for (int k = -windowSize; k <= windowSize; k++) {
-                    if ((x[0]+i >= 0) && (x[0]+i < vd.width)
-                        && (x[1]+j >= 0) && (x[1]+j < vd.height)
-                        && (x[2]+k >= 0) && (x[2]+k < vd.depth))
-                        brightness += 1;
-                }
-            }
-        }
-    return brightness;
-}
-
-unsigned int sq(int x) {
-    return x*x;
-}
-
-unsigned int mgn(int x, int y, int z) {
-    int m = x*x + y*y + z*z;
-    return std::min(255, m);
-}
