@@ -293,8 +293,9 @@ void VMainWindow::changeX(int x)
     cout << "New x position: " << x << "\n";
     xPos = x;
 	float v = vd.width;
-	if (x >= vd.idx_get_x(vd.feat[tPos])-1 && x < vd.idx_get_x(vd.feat[tPos])-1 + vd.width) {
-		fxPos = x - vd.idx_get_x(vd.feat[tPos]);
+	int cor = vd.idx_get_x(vd.feat[tPos]);
+	if (x >= cor - 1 && x < cor - 1 + v) {
+		fxPos = x - cor;
 	}
     xSlice->SetResliceAxesOrigin(xPos, vd.height/2, vd.depth/2);
     xSlice2->SetResliceAxesOrigin(fxPos, vd.fHeight/2, vd.fDepth/2);
@@ -308,9 +309,10 @@ void VMainWindow::changeY(int y)
 {
     cout << "New y position: " << y << "\n";
     yPos = y;
-	float v = vd.height;
-	if (y >= vd.idx_get_y(vd.feat[tPos]) - 1 && y < vd.idx_get_y(vd.feat[tPos]) - 1 + vd.width) {
-		fyPos = y - vd.idx_get_y(vd.feat[tPos]);
+	float v = vd.fHeight;
+	int cor = vd.idx_get_y(vd.feat[tPos]);
+	if (y >= cor - 1 && y < cor + 1 + v) {
+		fyPos = y - cor;
 	}
     ySlice->SetResliceAxesOrigin(vd.width/2, yPos, vd.depth/2);
     ySlice2->SetResliceAxesOrigin(vd.fWidth/2, fyPos, vd.fDepth/2);
@@ -325,8 +327,9 @@ void VMainWindow::changeZ(int z)
     cout << "New z position: " << z << "\n";
     zPos = z;
 	float v = vd.depth;
-	if (z >= vd.idx_get_z(vd.feat[tPos]) - 1 && z < vd.idx_get_z(vd.feat[tPos]) - 1 + vd.width) {
-		fzPos = z-2 - vd.idx_get_z(vd.feat[tPos]);
+	int cor = vd.idx_get_z(vd.feat[tPos]);
+	if (z >= cor - 1 && z < cor + 1 + v) {
+		fzPos = z - cor;
 	}
     zSlice->SetResliceAxesOrigin(vd.width/2, vd.height/2, zPos);
     zSlice2->SetResliceAxesOrigin(vd.fWidth/2, vd.fHeight/2, fzPos);

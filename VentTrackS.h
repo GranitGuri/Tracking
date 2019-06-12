@@ -32,16 +32,11 @@ public:
 	unsigned int* feat;
     unsigned char** frame;
     unsigned char** fro;
-    unsigned char** dx; // Displacement
-    unsigned char** dy;
-    unsigned char** dz;
-    unsigned char** dm; // Displacement magnitude square
     
     void readPhilipsDicomFile();
 	void doSomething();
 	void fillFeat();
 	void showFeature(int x, int y, int z, int f);
-	void fillSeed(int x, int y, int z, int f);
 	void FilterCreation(int size);
 	void FilterCreation2(int size);
 	void Print3D();

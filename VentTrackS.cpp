@@ -17,7 +17,7 @@ using namespace std;
 VolumeData vd;
 
 int FEATURELENGTH = 10;
-int SEARCHDISTANCE = 5;
+int SEARCHDISTANCE = 0;
 int FRAMEDISTANCE = 0;
 int pos;
 int KERNELSIZE = 3;
@@ -104,18 +104,10 @@ void VolumeData::readPhilipsDicomFile()
 	feat = new unsigned int[numVolumes];
     frame = new unsigned char*[numVolumes];
     fro   = new unsigned char*[numVolumes];
-    dx   = new unsigned char*[numVolumes];
-    dy   = new unsigned char*[numVolumes];
-    dz   = new unsigned char*[numVolumes];
-    dm   = new unsigned char*[numVolumes];
     for (unsigned int i=0; i<numVolumes; i++) {
 		gradFrame[i] = new unsigned char[volumeSize];
         frame[i] = new unsigned char[featureSize];
         fro[i] = new unsigned char[volumeSize];
-        dx[i] = new unsigned char[volumeSize];
-        dy[i] = new unsigned char[volumeSize];
-        dz[i] = new unsigned char[volumeSize];
-        dm[i] = new unsigned char[volumeSize];
         inFile.read((char*) fro[i], volumeSize);
     }
 	pos = idx(100, 100, 100);
@@ -125,7 +117,6 @@ void VolumeData::readPhilipsDicomFile()
 	//gaussianBlur();
 	bit5map();
 	fillFeat();
-	fillSeed(100, 100, 100, 0);
 //	Print3D();
 //	SSDforward(pos);
 //	SSDbackward(pos);
@@ -143,23 +134,14 @@ std::vector<vector<vector<T>>> make_3d_vector(int z, int y, int x, T value = T{}
 	return vector<vector<vector<T>>>(z, vector<vector<T>>(y, vector<T>(x, value)));
 }
 
-vector<vector<vector<double>>> feature = make_3d_vector(FEATURELENGTH, FEATURELENGTH, FEATURELENGTH, 0.0);
 vector<vector<vector<double>>> GKernel = make_3d_vector(FEATURELENGTH, FEATURELENGTH, FEATURELENGTH, 0.0);
 vector<vector<vector<double>>> GKernel2 = make_3d_vector(3, 3, 3, 0.0);
 
-
-void VolumeData::fillSeed(int x, int y, int z, int f) {
-		for (int i = 0; i < FEATURELENGTH; i++)
-			for (int j = 0; j < FEATURELENGTH; j++)
-				for (int k = 0; k < FEATURELENGTH; k++)
-					feature[k][j][i] = +fro[f][idx(k+x, j+y, i+z)];
-}
-
 void VolumeData::showFeature(int x, int y, int z, int f) {
-	for (int i = z; i < z + FEATURELENGTH+2; i++)
-		for (int j = y; j < y + FEATURELENGTH+2; j++)
-			for (int k = x; k < x + FEATURELENGTH+2; k++)
-				if(i == z || i == FEATURELENGTH + 1 + z || j == y || j == FEATURELENGTH + 1 + y || k == x || k == FEATURELENGTH + 1 + x)
+	for (int i = z-1; i <= z + FEATURELENGTH; i++)
+		for (int j = y-1; j <= y + FEATURELENGTH; j++)
+			for (int k = x-1; k <= x + FEATURELENGTH; k++)
+				if(i == z-1 || i == FEATURELENGTH + z || j == y-1 || j == FEATURELENGTH + y || k == x-1 || k == FEATURELENGTH + x)
 					gradFrame[f][idx(k, j, i)] = 255;
 }
 
@@ -233,18 +215,6 @@ void VolumeData::Print3D() {
 			for (int x = 0; x < GKernel.size(); x++)
 			{
 				cout << GKernel[x][y][z] << " ";
-			}
-			cout << "    ";
-		}
-		cout << endl;
-	}
-	for (int y = 0; y < feature[0].size(); y++)
-	{
-		for (int z = 0; z < feature[0][0].size(); z++)
-		{
-			for (int x = 0; x < feature.size(); x++)
-			{
-				cout << feature[x][y][z] << " ";
 			}
 			cout << "    ";
 		}
@@ -351,7 +321,6 @@ int VolumeData::sumOfSqares(int f){
 void VolumeData::SSDforward(int pos)
 {
 	for (unsigned int i = 0; i < FRAMEDISTANCE; i++) {
-		fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
 		pos = sumOfSqares(i + 1);
 	}
 }
@@ -359,7 +328,6 @@ void VolumeData::SSDforward(int pos)
 void VolumeData::SSDbackward(int pos)
 {
 	for (unsigned int i = FRAMEDISTANCE; i > 0; i--) {
-		fillSeed(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), i);
 		pos = sumOfSqares(i - 1);
 	}
 }
@@ -377,7 +345,7 @@ void VolumeData::fillFeat() {
             }
         }
 		pos = sumOfSqares(f);
-		showFeature(x, y, z, f);
+		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f);
 		feat[f] = pos;
 		int x = idx_get_x(pos);
 		int y = idx_get_y(pos);
