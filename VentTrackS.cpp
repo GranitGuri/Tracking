@@ -18,7 +18,7 @@ VolumeData vd;
 
 int FEATURELENGTH = 10;
 int SEARCHDISTANCE = 5;
-int FRAMEDISTANCE = 0;
+int FRAMEDISTANCE = 50;
 int pos;
 int KERNELSIZE = 3;
 
@@ -276,11 +276,17 @@ double VolumeData::sumOfSqareDifference(int sx, int sy, int sz, int f, bool b) {
 				//cout << "fro+1" << +fro[f+1][idx(k, j, i)] << endl;
 				//cout << "fro" << +fro[f][idx(k, j, i)] << endl;
 				//cout << "frame" << +frame[f][idx(k-x, j-y, i-z)] << endl;
-				if (f < numVolumes-1 && b == false) {
+				if (f < numVolumes - 1 && b == false) {
 					diff = GKernel[i][j][k] * (frame[f][idxf(i, j, k)] - gradFrame[f + 1][idx(i + sx, j + sy, k + sz)]);
+				}
+				else if (f == numVolumes - 1 && b == false) {
+					diff = GKernel[i][j][k] * (frame[f][idxf(i, j, k)] - gradFrame[f][idx(i + sx, j + sy, k + sz)]);
 				}
 				if (f > 0 && b == true) {
 					diff = GKernel[i][j][k] * (backframe[f][idxf(i, j, k)] - gradFrame[f - 1][idx(i + sx, j + sy, k + sz)]);
+				}
+				if (f == 0 && b == true) {
+					diff = GKernel[i][j][k] * (backframe[f][idxf(i, j, k)] - gradFrame[f][idx(i + sx, j + sy, k + sz)]);
 				}
 				sum += diff * diff;
 			}
@@ -323,32 +329,21 @@ int VolumeData::sumOfSqares(int f, bool b){
 }
 
 void VolumeData::SSDforward() {
-	int x = idx_get_x(pos);
-	int y = idx_get_y(pos);
-	int z = idx_get_z(pos);
-	for (unsigned int f = 0; f < numVolumes; f++) {
+	for (unsigned int f = 0; f < FRAMEDISTANCE; f++) {
 		fillFeat(f, pos, false);
 		feat[f] = pos;
 		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f);
 		pos = sumOfSqares(f, false);
-		int x = idx_get_x(pos);
-		int y = idx_get_y(pos);
-		int z = idx_get_z(pos);
 	}
 }
 
 void VolumeData::SSDbackward() {
-	int x = idx_get_x(pos);
-	int y = idx_get_y(pos);
-	int z = idx_get_z(pos);
-	for (unsigned int f = numVolumes-1; f > 0; f--) {
+	for (unsigned int f = FRAMEDISTANCE-1; f >= 0; f--) {
 		fillFeat(f, pos, true);
 		backfeat[f] = pos;
 		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f);
 		pos = sumOfSqares(f, true);
-		int x = idx_get_x(pos);
-		int y = idx_get_y(pos);
-		int z = idx_get_z(pos);
+		if (f == 0) { break; }
 	}
 }
 
