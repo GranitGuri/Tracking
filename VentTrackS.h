@@ -31,20 +31,22 @@ public:
 	unsigned char** gradFrame;
 	unsigned int* feat;
     unsigned char** frame;
+	unsigned int* backfeat;
+	unsigned char** backframe;
     unsigned char** fro;
     
     void readPhilipsDicomFile();
 	void doSomething();
-	void fillFeat();
+	void fillFeat(int f, int pos, bool b);
 	void showFeature(int x, int y, int z, int f);
 	void FilterCreation(int size);
 	void FilterCreation2(int size);
 	void Print3D();
-	void SSDbackward(int pos);
-	void SSDforward(int pos);
+	void SSDbackward();
+	void SSDforward();
 
-	int sumOfSqares(int f);
-	double sumOfSqareDifference(int x, int y, int z, int f);
+	int sumOfSqares(int f, bool b);
+	double sumOfSqareDifference(int x, int y, int z, int f, bool b);
     void gradientMagnitude();
 	void gaussianBlur();
 	void bit5map();

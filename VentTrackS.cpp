@@ -17,7 +17,7 @@ using namespace std;
 VolumeData vd;
 
 int FEATURELENGTH = 10;
-int SEARCHDISTANCE = 0;
+int SEARCHDISTANCE = 5;
 int FRAMEDISTANCE = 0;
 int pos;
 int KERNELSIZE = 3;
@@ -103,10 +103,13 @@ void VolumeData::readPhilipsDicomFile()
 	gradFrame = new unsigned char*[numVolumes];
 	feat = new unsigned int[numVolumes];
     frame = new unsigned char*[numVolumes];
+	backfeat = new unsigned int[numVolumes];
+	backframe = new unsigned char*[numVolumes];
     fro   = new unsigned char*[numVolumes];
     for (unsigned int i=0; i<numVolumes; i++) {
 		gradFrame[i] = new unsigned char[volumeSize];
         frame[i] = new unsigned char[featureSize];
+		backframe[i] = new unsigned char[featureSize];
         fro[i] = new unsigned char[volumeSize];
         inFile.read((char*) fro[i], volumeSize);
     }
@@ -115,8 +118,9 @@ void VolumeData::readPhilipsDicomFile()
 	FilterCreation2(KERNELSIZE);
 	gradientMagnitude();
 	//gaussianBlur();
-	bit5map();
-	fillFeat();
+	//bit5map();
+	SSDforward();
+	SSDbackward();
 //	Print3D();
 //	SSDforward(pos);
 //	SSDbackward(pos);
@@ -260,7 +264,7 @@ Sum of the cubes Values
 Input: x, y, z, frame, length
 Output: Integer
 */
-double VolumeData::sumOfSqareDifference(int sx, int sy, int sz, int f) {
+double VolumeData::sumOfSqareDifference(int sx, int sy, int sz, int f, bool b) {
 	double sum = 0;
 	double diff = 0;
 	for (int i = 0; i < FEATURELENGTH; i++)
@@ -272,11 +276,11 @@ double VolumeData::sumOfSqareDifference(int sx, int sy, int sz, int f) {
 				//cout << "fro+1" << +fro[f+1][idx(k, j, i)] << endl;
 				//cout << "fro" << +fro[f][idx(k, j, i)] << endl;
 				//cout << "frame" << +frame[f][idx(k-x, j-y, i-z)] << endl;
-				if (f < numVolumes-1) {
+				if (f < numVolumes-1 && b == false) {
 					diff = GKernel[i][j][k] * (frame[f][idxf(i, j, k)] - gradFrame[f + 1][idx(i + sx, j + sy, k + sz)]);
 				}
-				else {
-					diff = GKernel[i][j][k] * (frame[f][idxf(i, j, k)] - gradFrame[f][idx(i + sx, j + sy, k + sz)]);
+				if (f > 0 && b == true) {
+					diff = GKernel[i][j][k] * (backframe[f][idxf(i, j, k)] - gradFrame[f - 1][idx(i + sx, j + sy, k + sz)]);
 				}
 				sum += diff * diff;
 			}
@@ -290,7 +294,7 @@ Sum of X Sqares
 Input: x, y, z, frame, length
 Output: Position of feature
 */
-int VolumeData::sumOfSqares(int f){
+int VolumeData::sumOfSqares(int f, bool b){
 	int x = idx_get_x(pos);
 	int y = idx_get_y(pos);
 	int z = idx_get_z(pos);
@@ -301,7 +305,7 @@ int VolumeData::sumOfSqares(int f){
 		{
 			for (int k = x - SEARCHDISTANCE; k <= x + SEARCHDISTANCE; k++)
 			{
-				double s = sumOfSqareDifference(k, j, i, f);
+				double s = sumOfSqareDifference(k, j, i, f, b);
 				if (min > s)
 				{
 					min = s;
@@ -318,39 +322,52 @@ int VolumeData::sumOfSqares(int f){
 	return pos;
 }
 
-void VolumeData::SSDforward(int pos)
-{
-	for (unsigned int i = 0; i < FRAMEDISTANCE; i++) {
-		pos = sumOfSqares(i + 1);
-	}
-}
-
-void VolumeData::SSDbackward(int pos)
-{
-	for (unsigned int i = FRAMEDISTANCE; i > 0; i--) {
-		pos = sumOfSqares(i - 1);
-	}
-}
-
-void VolumeData::fillFeat() {
+void VolumeData::SSDforward() {
 	int x = idx_get_x(pos);
 	int y = idx_get_y(pos);
 	int z = idx_get_z(pos);
-    for (unsigned int f = 0; f < numVolumes; f++) {
-        for (int i = 0; i < FEATURELENGTH; i++) {
-            for (int j = 0; j < FEATURELENGTH; j++) {
-                for (int  k = 0; k < FEATURELENGTH; k++) {
-                    frame[f][idxf(i,j,k)] = gradFrame[f][idx(x+i, y+j ,z+k)];                 
-                }
-            }
-        }
-		pos = sumOfSqares(f);
-		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f);
+	for (unsigned int f = 0; f < numVolumes; f++) {
+		fillFeat(f, pos, false);
 		feat[f] = pos;
+		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f);
+		pos = sumOfSqares(f, false);
 		int x = idx_get_x(pos);
 		int y = idx_get_y(pos);
 		int z = idx_get_z(pos);
-    }
+	}
+}
+
+void VolumeData::SSDbackward() {
+	int x = idx_get_x(pos);
+	int y = idx_get_y(pos);
+	int z = idx_get_z(pos);
+	for (unsigned int f = numVolumes-1; f > 0; f--) {
+		fillFeat(f, pos, true);
+		backfeat[f] = pos;
+		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f);
+		pos = sumOfSqares(f, true);
+		int x = idx_get_x(pos);
+		int y = idx_get_y(pos);
+		int z = idx_get_z(pos);
+	}
+}
+
+void VolumeData::fillFeat(int f, int pos, bool b) {
+	int x = idx_get_x(pos);
+	int y = idx_get_y(pos);
+	int z = idx_get_z(pos);
+	for (int i = 0; i < FEATURELENGTH; i++) {
+		for (int j = 0; j < FEATURELENGTH; j++) {
+			for (int  k = 0; k < FEATURELENGTH; k++) {
+				if (b == false) {
+					frame[f][idxf(i, j, k)] = gradFrame[f][idx(x + i, y + j, z + k)];
+				}
+				else {
+					backframe[f][idxf(i, j, k)] = gradFrame[f][idx(x + i, y + j, z + k)];
+				}
+			}
+		}
+	}
 }
 
 /******************************************************************************************/
@@ -388,7 +405,7 @@ void VolumeData::gaussianBlur() {
 	int dx = 0;
 	int dy = 0;
 	int dz = 0;
-	for (int f = 0; f < numVolumes; f++)
+	for (int f = 0; f < 2; f++)
 	{
 		for (int i = 0; i < depth; i++)
 		{
@@ -397,7 +414,7 @@ void VolumeData::gaussianBlur() {
 				for (int k = 0; k < height; k++)
 				{
 					if (i == 0 || i == depth - 1 || j == 0 || j == width - 1 || k == 0 || k == height - 1) {
-						gradFrame[f][idx(k, j, i)] = 0;
+						fro[f][idx(k, j, i)] = 0;
 					}
 					else {
 						for (int z = 0; z < 3; z++)
