@@ -28,6 +28,7 @@ public:
     int volumeSize;
 	int featureSize;
 
+	int** neighborPositions;
 	unsigned char** gradFrame;
 	unsigned int* feat;
     unsigned char** frame;
@@ -44,12 +45,15 @@ public:
 	void Print3D();
 	void SSDbackward();
 	void SSDforward();
+	void nearestNeighbors(int f, bool b);
+	void calculateNeighborVector(int startPos, int shift, int f, int b);
 
-	int sumOfSqares(int f, bool b);
+	int sumOfSqares(int startPos,  int f, bool b);
 	double sumOfSqareDifference(int x, int y, int z, int f, bool b);
     void gradientMagnitude();
 	void gaussianBlur();
 	void bit5map();
+
     int idx(int x, int y, int z);
 	int idx_get_x(int idx);
 	int idx_get_y(int idx);

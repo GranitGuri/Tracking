@@ -100,6 +100,10 @@ void VolumeData::readPhilipsDicomFile()
 	fHeight = FEATURELENGTH; fWidth = FEATURELENGTH; fDepth = FEATURELENGTH;
     volumeSize = height * width * depth;
 	featureSize = fHeight * fWidth * fDepth;
+	neighborPositions = new int*[7];
+	for (unsigned int i = 0; i < 7; i++) {
+		neighborPositions[i] = new int[3];
+	}
 	gradFrame = new unsigned char*[numVolumes];
 	feat = new unsigned int[numVolumes];
     frame = new unsigned char*[numVolumes];
@@ -117,13 +121,12 @@ void VolumeData::readPhilipsDicomFile()
 	FilterCreation(FEATURELENGTH);
 	FilterCreation2(KERNELSIZE);
 	gradientMagnitude();
-	//gaussianBlur();
-	//bit5map();
-	SSDforward();
-	SSDbackward();
+//	gaussianBlur();
+//	bit5map();
+//	SSDforward();
+//	SSDbackward();
+	nearestNeighbors(0, false);
 //	Print3D();
-//	SSDforward(pos);
-//	SSDbackward(pos);
 	cout << endl;
     inFile.close();
 }
@@ -300,10 +303,11 @@ Sum of X Sqares
 Input: x, y, z, frame, length
 Output: Position of feature
 */
-int VolumeData::sumOfSqares(int f, bool b){
-	int x = idx_get_x(pos);
-	int y = idx_get_y(pos);
-	int z = idx_get_z(pos);
+int VolumeData::sumOfSqares(int startPos, int f, bool b){
+	int x = idx_get_x(startPos);
+	int y = idx_get_y(startPos);
+	int z = idx_get_z(startPos);
+	int nextPos = 0;
 	double min = 1000000;
 	for (int i = z - SEARCHDISTANCE; i <= z + SEARCHDISTANCE; i++)
 	{
@@ -315,17 +319,17 @@ int VolumeData::sumOfSqares(int f, bool b){
 				if (min > s)
 				{
 					min = s;
-					pos = idx(k, j, i);
+					nextPos = idx(k, j, i);
 				}
 			}
 		}
 	}
 
 	cout << "Count " << min << endl;
-	cout << idx_get_x(pos) << endl;
-	cout << idx_get_y(pos) << endl;
-	cout << idx_get_z(pos) << endl;
-	return pos;
+	cout << idx_get_x(nextPos) << " ";
+	cout << idx_get_y(nextPos) << " ";
+	cout << idx_get_z(nextPos) << endl;
+	return nextPos;
 }
 
 void VolumeData::SSDforward() {
@@ -333,7 +337,7 @@ void VolumeData::SSDforward() {
 		fillFeat(f, pos, false);
 		feat[f] = pos;
 		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f);
-		pos = sumOfSqares(f, false);
+		pos = sumOfSqares(pos, f, false);
 	}
 }
 
@@ -342,7 +346,7 @@ void VolumeData::SSDbackward() {
 		fillFeat(f, pos, true);
 		backfeat[f] = pos;
 		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f);
-		pos = sumOfSqares(f, true);
+		pos = sumOfSqares(pos, f, true);
 		if (f == 0) { break; }
 	}
 }
@@ -465,6 +469,65 @@ void VolumeData::bit5map() {
 		}
 	}
 }
+
+/******************************************************************************************/
+/***********************************nearest Neighbors**************************************/
+/******************************************************************************************/
+
+void VolumeData::nearestNeighbors(int f, bool b) {
+	int x = idx_get_x(pos);
+	int y = idx_get_y(pos);
+	int z = idx_get_z(pos);
+	//Vector of main position shift
+	calculateNeighborVector(pos, 0, f, b);
+	//Vector of Above position shift
+	calculateNeighborVector(pos, 1, f, b);
+	//Vector of Above position shift
+	calculateNeighborVector(pos, 2, f, b);
+	//Vector of Above position shift
+	calculateNeighborVector(pos, 3, f, b);
+	//Vector of Above position shift
+	calculateNeighborVector(pos, 4, f, b);
+	//Vector of Above position shift
+	calculateNeighborVector(pos, 5, f, b);
+	//Vector of Above position shift
+	calculateNeighborVector(pos, 6, f, b);
+}
+
+void VolumeData::calculateNeighborVector(int startPos, int shift, int f, int b) {
+	int x = idx_get_x(startPos);
+	int y = idx_get_y(startPos);
+	int z = idx_get_z(startPos);
+	switch (shift) {
+	case 0: //Start
+		break;
+	case 1: //Above
+		x -= FEATURELENGTH;
+		break;
+	case 2: //Under
+		x += FEATURELENGTH;
+		break;
+	case 3: // Left
+		y -= FEATURELENGTH;
+		break;
+	case 4: //Right
+		y += FEATURELENGTH;
+		break;
+	case 5: //Behind
+		z -= FEATURELENGTH;
+		break;
+	case 6: //Front
+		z += FEATURELENGTH;
+		break;
+	}
+	int neighborPos = idx(x, y, z);
+	int trans = sumOfSqares(neighborPos, f, b);
+	neighborPositions[shift][0] = idx_get_x(trans) - x;
+	neighborPositions[shift][1] = idx_get_y(trans) - y;
+	neighborPositions[shift][2] = idx_get_z(trans) - z;
+	cout << neighborPositions[shift][0] << " " << neighborPositions[shift][1] << " " << neighborPositions[shift][2] << endl;
+}
+
 /******************************************************************************************/
 /***********************************Koordinaten********************************************/
 /******************************************************************************************/
