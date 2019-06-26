@@ -16,11 +16,12 @@
 using namespace std;
 VolumeData vd;
 
-int FEATURELENGTH = 10;
-int SEARCHDISTANCE = 5;
-int FRAMEDISTANCE = 50;
+int FEATURELENGTH = 5;
+int SEARCHDISTANCE = 3;
+int FRAMEDISTANCE = 3;
 int pos;
 int KERNELSIZE = 3;
+int NEIGHBORDISTANCE = 2;
 
 void VolumeData::readPhilipsDicomFile()
 {
@@ -117,14 +118,15 @@ void VolumeData::readPhilipsDicomFile()
         fro[i] = new unsigned char[volumeSize];
         inFile.read((char*) fro[i], volumeSize);
     }
-	pos = idx(100, 100, 100);
+	pos = idx(120, 100, 110);
 	FilterCreation(FEATURELENGTH);
 	FilterCreation2(KERNELSIZE);
 	gradientMagnitude();
 //	gaussianBlur();
 //	bit5map();
-//	SSDforward();
-//	SSDbackward();
+	SSDforward();
+	SSDbackward();
+	pos = idx(120, 100, 110);
 	nearestNeighbors(0, false);
 //	Print3D();
 	cout << endl;
@@ -337,6 +339,7 @@ void VolumeData::SSDforward() {
 		fillFeat(f, pos, false);
 		feat[f] = pos;
 		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f);
+		if (f == FRAMEDISTANCE-1) { break; }
 		pos = sumOfSqares(pos, f, false);
 	}
 }
@@ -346,8 +349,8 @@ void VolumeData::SSDbackward() {
 		fillFeat(f, pos, true);
 		backfeat[f] = pos;
 		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f);
-		pos = sumOfSqares(pos, f, true);
 		if (f == 0) { break; }
+		pos = sumOfSqares(pos, f, true);
 	}
 }
 
@@ -482,15 +485,15 @@ void VolumeData::nearestNeighbors(int f, bool b) {
 	calculateNeighborVector(pos, 0, f, b);
 	//Vector of Above position shift
 	calculateNeighborVector(pos, 1, f, b);
-	//Vector of Above position shift
+	//Vector of Underneath position shift
 	calculateNeighborVector(pos, 2, f, b);
-	//Vector of Above position shift
+	//Vector of Left position shift
 	calculateNeighborVector(pos, 3, f, b);
-	//Vector of Above position shift
+	//Vector of Right position shift
 	calculateNeighborVector(pos, 4, f, b);
-	//Vector of Above position shift
+	//Vector of Behind position shift
 	calculateNeighborVector(pos, 5, f, b);
-	//Vector of Above position shift
+	//Vector of Front position shift
 	calculateNeighborVector(pos, 6, f, b);
 }
 
@@ -502,22 +505,22 @@ void VolumeData::calculateNeighborVector(int startPos, int shift, int f, int b) 
 	case 0: //Start
 		break;
 	case 1: //Above
-		x -= FEATURELENGTH;
+		x -= NEIGHBORDISTANCE;
 		break;
 	case 2: //Under
-		x += FEATURELENGTH;
+		x += NEIGHBORDISTANCE;
 		break;
 	case 3: // Left
-		y -= FEATURELENGTH;
+		y -= NEIGHBORDISTANCE;
 		break;
 	case 4: //Right
-		y += FEATURELENGTH;
+		y += NEIGHBORDISTANCE;
 		break;
 	case 5: //Behind
-		z -= FEATURELENGTH;
+		z -= NEIGHBORDISTANCE;
 		break;
 	case 6: //Front
-		z += FEATURELENGTH;
+		z += NEIGHBORDISTANCE;
 		break;
 	}
 	int neighborPos = idx(x, y, z);
@@ -525,7 +528,47 @@ void VolumeData::calculateNeighborVector(int startPos, int shift, int f, int b) 
 	neighborPositions[shift][0] = idx_get_x(trans) - x;
 	neighborPositions[shift][1] = idx_get_y(trans) - y;
 	neighborPositions[shift][2] = idx_get_z(trans) - z;
-	cout << neighborPositions[shift][0] << " " << neighborPositions[shift][1] << " " << neighborPositions[shift][2] << endl;
+	dismissNeigbors();
+	if (neighborPositions[shift] != NULL) {
+		cout << neighborPositions[shift][0] << " " << neighborPositions[shift][1] << " " << neighborPositions[shift][2] << endl;
+	}
+	else {
+		cout << "Dissmissed" << endl;
+	}
+}
+
+void VolumeData::dismissNeigbors() {
+	int distance = 0;
+	for (int i = 0; i < 7; i++) {
+		if (neighborPositions[i] == NULL) {
+			continue;
+		}
+		distance = calculateDistance(neighborPositions[i][0], neighborPositions[i][1], neighborPositions[i][2]) - calculateGeneralDistance();
+		distance = sqrt(distance * distance);
+		//!!!!!!!!!!!!!!Distanz-Grenze anpassen und vorzeichen prüfen!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		if(distance > 2) {
+			neighborPositions[i] = NULL;
+		}
+	}
+}
+
+int VolumeData::calculateGeneralDistance() {
+	int gd = 0;
+	int numN = 0;
+	for (int i = 0; i < 7; i++) {
+		if (neighborPositions[i] == NULL) {
+			continue;
+		}
+		else {
+			gd += calculateDistance(neighborPositions[i][0], neighborPositions[i][1], neighborPositions[i][2]);
+			numN++;
+		}
+	}
+	return gd/numN;
+}
+
+int VolumeData::calculateDistance(int x, int y, int z) {
+	return sqrt(x * x + y * y + z * z);
 }
 
 /******************************************************************************************/

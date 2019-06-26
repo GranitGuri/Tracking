@@ -47,6 +47,9 @@ public:
 	void SSDforward();
 	void nearestNeighbors(int f, bool b);
 	void calculateNeighborVector(int startPos, int shift, int f, int b);
+	void dismissNeigbors();
+	int calculateGeneralDistance();
+	int calculateDistance(int x, int y, int z);
 
 	int sumOfSqares(int startPos,  int f, bool b);
 	double sumOfSqareDifference(int x, int y, int z, int f, bool b);
