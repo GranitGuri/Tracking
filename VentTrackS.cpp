@@ -16,12 +16,13 @@
 using namespace std;
 VolumeData vd;
 
-int FEATURELENGTH = 5;
-int SEARCHDISTANCE = 3;
-int FRAMEDISTANCE = 3;
+int FEATURELENGTH = 10;
+int SEARCHDISTANCE = 5;
+int FRAMEDISTANCE = 50;
 int pos;
 int KERNELSIZE = 3;
 int NEIGHBORDISTANCE = 2;
+bool SSDorNCC = false;
 
 void VolumeData::readPhilipsDicomFile()
 {
@@ -124,10 +125,10 @@ void VolumeData::readPhilipsDicomFile()
 	gradientMagnitude();
 //	gaussianBlur();
 //	bit5map();
-	SSDforward();
-	SSDbackward();
-	pos = idx(120, 100, 110);
-	nearestNeighbors(0, false);
+	forward();
+	backward();
+	pos = idx(100, 100, 100);
+//	nearestNeighbors(0, false);
 //	Print3D();
 	cout << endl;
     inFile.close();
@@ -305,7 +306,7 @@ Sum of X Sqares
 Input: x, y, z, frame, length
 Output: Position of feature
 */
-int VolumeData::sumOfSqares(int startPos, int f, bool b){
+int VolumeData::minDifferences(int startPos, int f, bool b, bool SSDorNCC){
 	int x = idx_get_x(startPos);
 	int y = idx_get_y(startPos);
 	int z = idx_get_z(startPos);
@@ -317,7 +318,19 @@ int VolumeData::sumOfSqares(int startPos, int f, bool b){
 		{
 			for (int k = x - SEARCHDISTANCE; k <= x + SEARCHDISTANCE; k++)
 			{
-				double s = sumOfSqareDifference(k, j, i, f, b);
+				double s = 0;
+				if (SSDorNCC == true) {
+					s = sumOfSqareDifference(k, j, i, f, b);
+				}
+				else {
+					s = NCC(k, j, i, f, b);
+					if (s < 1) {
+						s = 1 - s;
+					}
+					if (s > 1) {
+						s = s - 1;
+					}
+				}
 				if (min > s)
 				{
 					min = s;
@@ -326,31 +339,35 @@ int VolumeData::sumOfSqares(int startPos, int f, bool b){
 			}
 		}
 	}
-
-	cout << "Count " << min << endl;
+	cout << "from   ";
+	cout << idx_get_x(startPos) << " ";
+	cout << idx_get_y(startPos) << " ";
+	cout << idx_get_z(startPos) << endl;
+	cout << " mit Count " << min << endl;
+	cout << "to   ";
 	cout << idx_get_x(nextPos) << " ";
 	cout << idx_get_y(nextPos) << " ";
 	cout << idx_get_z(nextPos) << endl;
 	return nextPos;
 }
 
-void VolumeData::SSDforward() {
+void VolumeData::forward() {
 	for (unsigned int f = 0; f < FRAMEDISTANCE; f++) {
 		fillFeat(f, pos, false);
 		feat[f] = pos;
 		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f);
 		if (f == FRAMEDISTANCE-1) { break; }
-		pos = sumOfSqares(pos, f, false);
+		pos = minDifferences(pos, f, false, SSDorNCC);
 	}
 }
 
-void VolumeData::SSDbackward() {
+void VolumeData::backward() {
 	for (unsigned int f = FRAMEDISTANCE-1; f >= 0; f--) {
 		fillFeat(f, pos, true);
 		backfeat[f] = pos;
 		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f);
 		if (f == 0) { break; }
-		pos = sumOfSqares(pos, f, true);
+		pos = minDifferences(pos, f, false, SSDorNCC);
 	}
 }
 
@@ -495,6 +512,7 @@ void VolumeData::nearestNeighbors(int f, bool b) {
 	calculateNeighborVector(pos, 5, f, b);
 	//Vector of Front position shift
 	calculateNeighborVector(pos, 6, f, b);
+	dismissNeigbors();
 }
 
 void VolumeData::calculateNeighborVector(int startPos, int shift, int f, int b) {
@@ -524,30 +542,27 @@ void VolumeData::calculateNeighborVector(int startPos, int shift, int f, int b) 
 		break;
 	}
 	int neighborPos = idx(x, y, z);
-	int trans = sumOfSqares(neighborPos, f, b);
+	fillFeat(f, neighborPos, false);
+	int trans = minDifferences(pos, f, false, true);
 	neighborPositions[shift][0] = idx_get_x(trans) - x;
 	neighborPositions[shift][1] = idx_get_y(trans) - y;
 	neighborPositions[shift][2] = idx_get_z(trans) - z;
-	dismissNeigbors();
-	if (neighborPositions[shift] != NULL) {
-		cout << neighborPositions[shift][0] << " " << neighborPositions[shift][1] << " " << neighborPositions[shift][2] << endl;
-	}
-	else {
-		cout << "Dissmissed" << endl;
-	}
 }
 
 void VolumeData::dismissNeigbors() {
 	int distance = 0;
+	int gDistance = 0;
 	for (int i = 0; i < 7; i++) {
-		if (neighborPositions[i] == NULL) {
-			continue;
-		}
-		distance = calculateDistance(neighborPositions[i][0], neighborPositions[i][1], neighborPositions[i][2]) - calculateGeneralDistance();
-		distance = sqrt(distance * distance);
-		//!!!!!!!!!!!!!!Distanz-Grenze anpassen und vorzeichen prüfen!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		if(distance > 2) {
-			neighborPositions[i] = NULL;
+		if (neighborPositions[i] != NULL) {
+			gDistance = calculateGeneralDistance();
+			distance = calculateDistance(neighborPositions[i][0], neighborPositions[i][1], neighborPositions[i][2]);
+			distance = sqrt(distance * distance) - gDistance;
+			cout << neighborPositions[i][0] << " " << neighborPositions[i][1] << " " << neighborPositions[i][2] << endl;
+			//!!!!!!!!!!!!!!vorzeichen prüfen!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			if (distance > 3) {
+				neighborPositions[i] = NULL;
+				cout << "Dissmissed";
+			}
 		}
 	}
 }
@@ -556,10 +571,7 @@ int VolumeData::calculateGeneralDistance() {
 	int gd = 0;
 	int numN = 0;
 	for (int i = 0; i < 7; i++) {
-		if (neighborPositions[i] == NULL) {
-			continue;
-		}
-		else {
+		if (neighborPositions[i] != NULL) {
 			gd += calculateDistance(neighborPositions[i][0], neighborPositions[i][1], neighborPositions[i][2]);
 			numN++;
 		}
@@ -569,6 +581,49 @@ int VolumeData::calculateGeneralDistance() {
 
 int VolumeData::calculateDistance(int x, int y, int z) {
 	return sqrt(x * x + y * y + z * z);
+}
+
+/******************************************************************************************/
+/***********************************Cross-Correlation**************************************/
+/******************************************************************************************/
+
+double VolumeData::NCC(int sx, int sy, int sz, int f, bool b) {
+	double mult = 0;
+	double scalFrame = 0;
+	double scalGradFrame = 0;
+	for (int i = 0; i < FEATURELENGTH; i++)
+	{
+		for (int j = 0; j < FEATURELENGTH; j++)
+		{
+			for (int k = 0; k < FEATURELENGTH; k++)
+			{
+				if (f < numVolumes - 1 && b == false) {
+					mult += frame[f][idxf(i, j, k)] * gradFrame[f + 1][idx(i + sx, j + sy, k + sz)];
+					scalFrame += frame[f][idxf(i, j, k)] * frame[f][idxf(i, j, k)];
+					scalGradFrame += gradFrame[f + 1][idx(i + sx, j + sy, k + sz)] * gradFrame[f + 1][idx(i + sx, j + sy, k + sz)];
+				}
+				else if (f == numVolumes - 1 && b == false) {
+					mult += frame[f][idxf(i, j, k)] * gradFrame[f][idx(i + sx, j + sy, k + sz)];
+					scalFrame += frame[f][idxf(i, j, k)] * frame[f][idxf(i, j, k)];
+					scalGradFrame += gradFrame[f][idx(i + sx, j + sy, k + sz)] * gradFrame[f][idx(i + sx, j + sy, k + sz)];
+				}
+				if (f > 0 && b == true) {
+					mult += backframe[f][idxf(i, j, k)] * gradFrame[f - 1][idx(i + sx, j + sy, k + sz)];
+					scalFrame += backframe[f][idxf(i, j, k)] * backframe[f][idxf(i, j, k)];
+					scalGradFrame += gradFrame[f - 1][idx(i + sx, j + sy, k + sz)] * gradFrame[f - 1][idx(i + sx, j + sy, k + sz)];
+				}
+				if (f == 0 && b == true) {
+					mult += backframe[f][idxf(i, j, k)] * gradFrame[f][idx(i + sx, j + sy, k + sz)];
+					scalFrame += backframe[f][idxf(i, j, k)] * backframe[f][idxf(i, j, k)];
+					scalGradFrame += gradFrame[f][idx(i + sx, j + sy, k + sz)] * gradFrame[f][idx(i + sx, j + sy, k + sz)];
+				}
+			}
+		}
+	}
+	double a = scalFrame * scalGradFrame;
+	double bb = sqrt(a);
+	double c = mult / bb;
+	return c;
 }
 
 /******************************************************************************************/

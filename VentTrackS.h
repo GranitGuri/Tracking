@@ -43,15 +43,18 @@ public:
 	void FilterCreation(int size);
 	void FilterCreation2(int size);
 	void Print3D();
-	void SSDbackward();
-	void SSDforward();
+	void backward();
+	void forward();
 	void nearestNeighbors(int f, bool b);
 	void calculateNeighborVector(int startPos, int shift, int f, int b);
 	void dismissNeigbors();
 	int calculateGeneralDistance();
 	int calculateDistance(int x, int y, int z);
+	double NCC(int sx, int sy, int sz, int f, bool b);
+	int vectorMult(int pos, int f, bool b);
+	int vectorScalar(int pos, int f, bool b);
 
-	int sumOfSqares(int startPos,  int f, bool b);
+	int minDifferences(int startPos,  int f, bool b, bool SSDorNCC);
 	double sumOfSqareDifference(int x, int y, int z, int f, bool b);
     void gradientMagnitude();
 	void gaussianBlur();
