@@ -18,10 +18,10 @@ VolumeData vd;
 
 int FEATURELENGTH = 10;
 int SEARCHDISTANCE = 5;
-int FRAMEDISTANCE = 50;
+int FRAMEDISTANCE = 5;
 int pos;
 int KERNELSIZE = 3;
-int NEIGHBORDISTANCE = 2;
+int NEIGHBORDISTANCE = 1;
 bool SSDorNCC = false;
 
 void VolumeData::readPhilipsDicomFile()
@@ -127,7 +127,7 @@ void VolumeData::readPhilipsDicomFile()
 //	bit5map();
 	forward();
 	backward();
-	pos = idx(100, 100, 100);
+//	pos = idx(100, 100, 100);
 //	nearestNeighbors(0, false);
 //	Print3D();
 	cout << endl;
@@ -152,7 +152,7 @@ void VolumeData::showFeature(int x, int y, int z, int f) {
 		for (int j = y-1; j <= y + FEATURELENGTH; j++)
 			for (int k = x-1; k <= x + FEATURELENGTH; k++)
 				if(i == z-1 || i == FEATURELENGTH + z || j == y-1 || j == FEATURELENGTH + y || k == x-1 || k == FEATURELENGTH + x)
-					gradFrame[f][idx(k, j, i)] = 255;
+					fro[f][idx(k, j, i)] = 255;
 }
 
 /**
@@ -355,9 +355,19 @@ void VolumeData::forward() {
 	for (unsigned int f = 0; f < FRAMEDISTANCE; f++) {
 		fillFeat(f, pos, false);
 		feat[f] = pos;
+		if (f == FRAMEDISTANCE-1) {
+			showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f);
+			break; 
+		}
+		//pos = minDifferences(pos, f, false, SSDorNCC);
+		nearestNeighbors(f, true);
 		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f);
-		if (f == FRAMEDISTANCE-1) { break; }
-		pos = minDifferences(pos, f, false, SSDorNCC);
+		for (int i = 0; i < 7; i++) {
+			if (neighborPositions[i][0] != NULL) {
+				pos = idx(neighborPositions[i][0] + idx_get_x(pos), neighborPositions[i][1] + idx_get_y(pos), neighborPositions[i][2] + idx_get_z(pos));
+				break;
+			}
+		}
 	}
 }
 
@@ -365,9 +375,19 @@ void VolumeData::backward() {
 	for (unsigned int f = FRAMEDISTANCE-1; f >= 0; f--) {
 		fillFeat(f, pos, true);
 		backfeat[f] = pos;
+		if (f == 0) {
+			showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f); 
+			break; 
+		}
+		//pos = minDifferences(pos, f, false, SSDorNCC);
+		nearestNeighbors(f, false);
 		showFeature(idx_get_x(pos), idx_get_y(pos), idx_get_z(pos), f);
-		if (f == 0) { break; }
-		pos = minDifferences(pos, f, false, SSDorNCC);
+		for (int i = 0; i < 7; i++) {
+			if (neighborPositions[i][0] != NULL) {
+				pos = idx(neighborPositions[i][0] + idx_get_x(pos), neighborPositions[i][1] + idx_get_y(pos), neighborPositions[i][2] + idx_get_z(pos));
+				break;
+			}
+		}
 	}
 }
 
@@ -515,7 +535,7 @@ void VolumeData::nearestNeighbors(int f, bool b) {
 	dismissNeigbors();
 }
 
-void VolumeData::calculateNeighborVector(int startPos, int shift, int f, int b) {
+void VolumeData::calculateNeighborVector(int startPos, int shift, int f, bool b) {
 	int x = idx_get_x(startPos);
 	int y = idx_get_y(startPos);
 	int z = idx_get_z(startPos);
@@ -543,44 +563,64 @@ void VolumeData::calculateNeighborVector(int startPos, int shift, int f, int b) 
 	}
 	int neighborPos = idx(x, y, z);
 	fillFeat(f, neighborPos, false);
-	int trans = minDifferences(pos, f, false, true);
+	int trans = minDifferences(neighborPos, f, b, SSDorNCC);
 	neighborPositions[shift][0] = idx_get_x(trans) - x;
 	neighborPositions[shift][1] = idx_get_y(trans) - y;
 	neighborPositions[shift][2] = idx_get_z(trans) - z;
 }
 
 void VolumeData::dismissNeigbors() {
-	int distance = 0;
-	int gDistance = 0;
+	double generalX = 0;
+	double generalY = 0;
+	double generalZ = 0;
+	int posLeft = 0;
 	for (int i = 0; i < 7; i++) {
-		if (neighborPositions[i] != NULL) {
-			gDistance = calculateGeneralDistance();
-			distance = calculateDistance(neighborPositions[i][0], neighborPositions[i][1], neighborPositions[i][2]);
-			distance = sqrt(distance * distance) - gDistance;
-			cout << neighborPositions[i][0] << " " << neighborPositions[i][1] << " " << neighborPositions[i][2] << endl;
-			//!!!!!!!!!!!!!!vorzeichen prüfen!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			if (distance > 3) {
-				neighborPositions[i] = NULL;
-				cout << "Dissmissed";
+		posLeft = 0;
+		generalX = 0;
+		generalY = 0;
+		generalZ = 0;
+		for (int i = 0; i < 7; i++) {
+			if (neighborPositions[i][0] != NULL) {
+				generalX += neighborPositions[i][0];
+				generalY += neighborPositions[i][1];
+				generalZ += neighborPositions[i][2];
+				posLeft++;
 			}
 		}
-	}
-}
-
-int VolumeData::calculateGeneralDistance() {
-	int gd = 0;
-	int numN = 0;
-	for (int i = 0; i < 7; i++) {
-		if (neighborPositions[i] != NULL) {
-			gd += calculateDistance(neighborPositions[i][0], neighborPositions[i][1], neighborPositions[i][2]);
-			numN++;
+		generalX = round(generalX / posLeft);
+		generalY = round(generalY / posLeft);
+		generalZ = round(generalZ / posLeft);
+		double max = 0;
+		int dissmiss = NULL;
+		for (int i = 0; i < 7; i++) {
+			double currX = sqrt((generalX - neighborPositions[i][0]) * (generalX - neighborPositions[i][0]));
+			double currY = sqrt((generalY - neighborPositions[i][1]) * (generalY - neighborPositions[i][1]));
+			double currZ = sqrt((generalZ - neighborPositions[i][2]) * (generalZ - neighborPositions[i][2]));
+			if (neighborPositions[i][0] != NULL && currX > max) {
+				max = currX;
+				dissmiss = i;
+			}
+			if (neighborPositions[i][0] != NULL && currY > max) {
+				max = currY;
+				dissmiss = i;
+			}
+			if (neighborPositions[i][0] != NULL && currZ > max) {
+				max = currZ;
+				dissmiss = i;
+			}
+		}
+		if (posLeft > 1) {
+			cout << "position: " <<dissmiss << "vector: " << neighborPositions[i][0] << neighborPositions[i][1] << neighborPositions[i][2] << " Dissmissed with maximum difference: " << max << endl;
+			neighborPositions[dissmiss][0] = NULL;
+			neighborPositions[dissmiss][1] = NULL;
+			neighborPositions[dissmiss][2] = NULL;
 		}
 	}
-	return gd/numN;
-}
-
-int VolumeData::calculateDistance(int x, int y, int z) {
-	return sqrt(x * x + y * y + z * z);
+	for (int i = 0; i < 7; i++) {
+		if (neighborPositions[i][0] != NULL) {
+			cout << neighborPositions[i][0] << neighborPositions[i][1] << neighborPositions[i][2] << endl;
+		}
+	}
 }
 
 /******************************************************************************************/

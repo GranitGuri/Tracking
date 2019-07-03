@@ -389,7 +389,7 @@ void VMainWindow::importImages()
         image[i]->SetDataExtentToWholeExtent();
         image[i]->SetDataScalarTypeToUnsignedChar();
         image[i]->SetNumberOfScalarComponents(1);
-        image[i]->SetImportVoidPointer(vd.gradFrame[i]);
+        image[i]->SetImportVoidPointer(vd.fro[i]);
         //vd.drawGrid();
         image[i]->Update();
     }
@@ -418,7 +418,7 @@ void VMainWindow::createXImg() {
     xImg->SetDataExtentToWholeExtent();
     xImg->SetDataScalarTypeToUnsignedChar();
     xImg->SetNumberOfScalarComponents(1);
-    xImg->SetImportVoidPointer(vd.gradFrame[0]+x*y*zPos);
+    xImg->SetImportVoidPointer(vd.fro[0]+x*y*zPos);
     xImg->Update();
 }
 
@@ -431,6 +431,6 @@ void VMainWindow::createZImg() {
     xImg->SetDataExtentToWholeExtent();
     xImg->SetDataScalarTypeToUnsignedChar();
     xImg->SetNumberOfScalarComponents(1);
-    xImg->SetImportVoidPointer(vd.gradFrame[0] + zPos * vd.width * vd.height);
+    xImg->SetImportVoidPointer(vd.fro[0] + zPos * vd.width * vd.height);
     xImg->Update();
 }

@@ -46,7 +46,7 @@ public:
 	void backward();
 	void forward();
 	void nearestNeighbors(int f, bool b);
-	void calculateNeighborVector(int startPos, int shift, int f, int b);
+	void calculateNeighborVector(int startPos, int shift, int f, bool b);
 	void dismissNeigbors();
 	int calculateGeneralDistance();
 	int calculateDistance(int x, int y, int z);
