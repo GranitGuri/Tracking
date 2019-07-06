@@ -402,7 +402,7 @@ void VMainWindow::importImages()
         image2[i]->SetDataExtentToWholeExtent();
         image2[i]->SetDataScalarTypeToUnsignedChar();
         image2[i]->SetNumberOfScalarComponents(1);
-        image2[i]->SetImportVoidPointer(vd.frame[i]);
+        image2[i]->SetImportVoidPointer(vd.showFrame[i]);
         //image2[i]->SetImportVoidPointer(vd.dm[i]);
         //vd.drawGrid();
         image2[i]->Update();

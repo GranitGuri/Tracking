@@ -33,7 +33,10 @@ public:
 	unsigned int* feat;
     unsigned char** frame;
 	unsigned int* backfeat;
+	unsigned char** showFrame;
+	unsigned char** showBackframe;
 	unsigned char** backframe;
+	unsigned char** froFeature;
     unsigned char** fro;
     
     void readPhilipsDicomFile();
