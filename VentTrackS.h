@@ -56,6 +56,7 @@ public:
 	double NCC(int sx, int sy, int sz, int f, bool b);
 	int vectorMult(int pos, int f, bool b);
 	int vectorScalar(int pos, int f, bool b);
+	double* calculateAverage();
 
 	int minDifferences(int startPos,  int f, bool b, bool SSDorNCC);
 	double sumOfSqareDifference(int x, int y, int z, int f, bool b);

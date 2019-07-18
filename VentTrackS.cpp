@@ -16,12 +16,12 @@
 using namespace std;
 VolumeData vd;
 
-int FEATURELENGTH = 10;
+int FEATURELENGTH = 9;
 int SEARCHDISTANCE = 5;
-int FRAMEDISTANCE = 5;
+int FRAMEDISTANCE = 10;
 int pos;
 int KERNELSIZE = 3;
-int NEIGHBORDISTANCE = 5;
+int NEIGHBORDISTANCE = 3;
 bool SSDorNCC = false;
 bool neigbors = true;
 int REALNULL = 1337;
@@ -127,7 +127,7 @@ void VolumeData::readPhilipsDicomFile()
 		froFeature[i] = new unsigned char[volumeSize];
         inFile.read((char*) fro[i], volumeSize);
     }
-	pos = idx(120, 100, 110);
+	pos = idx(100, 100, 100);
 	FilterCreation(FEATURELENGTH);
 	FilterCreation2(KERNELSIZE);
 	gradientMagnitude();
@@ -137,7 +137,7 @@ void VolumeData::readPhilipsDicomFile()
 	backward();
 //	pos = idx(100, 100, 100);
 //	nearestNeighbors(0, false);
-//	Print3D();
+	Print3D();
 	cout << endl;
     inFile.close();
 }
@@ -172,7 +172,7 @@ void VolumeData::FilterCreation(int size)
 {
 	// intialising standard deviation to 1.0 
 	double sigma = 1.0;
-	double r, s = 2.0 * sigma * sigma;
+	double r, s = 0.5 * sigma * sigma;
 
 	// sum is for normalization 
 	double sum = 0.0;
@@ -238,7 +238,7 @@ void VolumeData::Print3D() {
 		}
 		cout << endl;
 	}
-	for (int y = 0; y < 3; y++)
+	/*for (int y = 0; y < 3; y++)
 	{
 		for (int z = 0; z < 3; z++)
 		{
@@ -265,7 +265,7 @@ void VolumeData::Print3D() {
 			cout << "    ";
 		}
 		cout << endl;
-	}
+	}*/
 
 }
 /***************************************************************************************************************************************************/
@@ -667,37 +667,62 @@ void VolumeData::calculateNeighborVector(int startPos, int shift, int f, bool b)
 	neighborPositions[shift][2] = idx_get_z(trans) - z;
 }
 
+/*
+sets the values of neighborPositions REALNULL if they differ from average
+*/
 void VolumeData::dismissNeigbors() {
 	int left = 7;
-	for (int i = 1; i < 7; i++) {
+	//loop through neighborPositions
+	for (int i = 0; i < 7; i++) {
 		double max = 0;
+		//Position to be dissmissed
 		int dissmiss = REALNULL;
-		for (int i = 1; i < 7; i++) {
-			double currX = abs(neighborPositions[0][0] - neighborPositions[i][0]);
-			double currY = abs(neighborPositions[0][1] - neighborPositions[i][1]);
-			double currZ = abs(neighborPositions[0][2] - neighborPositions[i][2]);
-			if (neighborPositions[i][0] != REALNULL && currX > max) {
-				max = currX;
-				dissmiss = i;
-				left--;
-			}
-			if (neighborPositions[i][0] != REALNULL && currY > max) {
-				max = currY;
-				dissmiss = i;
-				left--;
-			}
-			if (neighborPositions[i][0] != REALNULL && currZ > max) {
-				max = currZ;
-				dissmiss = i;
-				left--;
+		//Pointer to an array filled with the averages of x,y,z
+		double *averages;
+		averages = calculateAverage();
+		for (int i = 0; i < 7; i++) {
+			if (neighborPositions[i][0] != REALNULL) {
+				double currX = abs(neighborPositions[i][0] - averages[0]);
+				double currY = abs(neighborPositions[i][1] - averages[1]);
+				double currZ = abs(neighborPositions[i][2] - averages[2]);
+				if (currX > max) {
+					max = currX;
+					dissmiss = i;
+				}
+				if (currY > max) {
+					max = currY;
+					dissmiss = i;
+				}
+				if (currZ > max) {
+					max = currZ;
+					dissmiss = i;
+				}
 			}
 		}
-		if (left > 4 && max > 1) {
+		if (left > 4 && max > 0) {
 			neighborPositions[dissmiss][0] = REALNULL;
 			neighborPositions[dissmiss][1] = REALNULL;
 			neighborPositions[dissmiss][2] = REALNULL;
+			left--;
 		}
 	}
+}
+
+double* VolumeData::calculateAverage() {
+	static double  av[3];
+	double count = 0;
+	for (int i = 0; i < 7; ++i) {
+		if (neighborPositions[i][0] != REALNULL) {
+			av[0] += neighborPositions[i][0];
+			av[1] += neighborPositions[i][1];
+			av[2] += neighborPositions[i][2];
+			count++;
+		}
+	}
+	av[0] = round(av[0] / count);
+	av[1] = round(av[1] / count);
+	av[2] = round(av[2] / count);
+	return av;
 }
 
 /******************************************************************************************/
